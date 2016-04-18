@@ -1,4 +1,5 @@
 
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 /*
@@ -16,30 +17,21 @@ public class Main {
     /**
      * @param args the command line arguments
      */
+    
     public static void main(String[] args) {
         NumberReader reader = new NumberReader();
         reader.init();
         
-        HashMap<Integer, Double> probs = reader.readNumber(ImageLoader.loadImage("images/tests/one.png"));
-        displayResults(probs);
-    }
-    
-    private static void displayResults(HashMap<Integer, Double> results){
+        BufferedImage testImg = ImageLoader.loadImage("images/tests/test.png");
+        HashMap<Integer, Double> probs = reader.getProbs(testImg);
         
-        //double min = Double.MAX_VALUE;
-        double max = 0d;
-        int num = -1;
-        
-        for (Integer i: results.keySet()){
-            if (results.get(i) > max){
-                max = results.get(i);
-                num = i;
-            }
-            System.out.print(i + ": " + results.get(i) + ", ");
+        for (Integer i: probs.keySet()){
+            System.out.print(i + ": " + probs.get(i) + ", ");
             System.out.println();
         }
-        
+        int num = reader.getResult(probs);
         System.out.println("Therefore... it's a " + num);
+        
+        reader.consolidateResult(testImg, num);
     }
-    
 }
