@@ -1,7 +1,14 @@
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -15,21 +22,43 @@ import java.util.HashMap;
  */
 public class NumberReader {
     
-    private HashMap<Integer, BufferedImage> examples;
+    private HashMap<Integer, BufferedImage[]> examples;
     public void init(){
         examples = new HashMap();
-        examples.put(0, ImageLoader.loadImage("images/examples/zero.png"));
-        examples.put(1, ImageLoader.loadImage("images/examples/one.png"));
-        examples.put(2, ImageLoader.loadImage("images/examples/two.png"));
+        int numNums = ImageLoader.countFiles("images/examples/");
+        
+        for (int i = 0; i < numNums; i ++){
+            int numExamples = ImageLoader.countFiles("images/examples/" + i);
+            BufferedImage[] imgs = new BufferedImage[numExamples];
+            for (int j = 0; j < numExamples; j ++){
+                imgs[j] = ImageLoader.loadImage("images/examples/" + i + "/" + i + "_" + j);
+            }
+            examples.put(i, imgs);
+        }
     }
     
-    public HashMap<Integer, Double> readNumber(BufferedImage img){
+    public HashMap<Integer, Double> getProbs(BufferedImage img){
         HashMap<Integer, Double> probabilities = new HashMap();
         for (Integer num: examples.keySet()){
-            double prob = analyze(examples.get(num), img);
-            probabilities.put(num, prob);
+            double totalProbs = 0d;
+            for (BufferedImage example: examples.get(num)){
+                double prob = analyze(example, img);
+                totalProbs += prob;
+            }
+            probabilities.put(num, totalProbs/examples.get(num).length);
         }
         return probabilities;
+    }
+    
+    public void consolidateResult(BufferedImage img, int num){
+        Scanner input = new Scanner(System.in);
+        System.out.print("Enter the number I should have guessed\n>> ");
+        int realNum = input.nextInt();
+        try {
+            Files.copy((new File("images/tests/test.png")).toPath(), (new File("images/examples/testCopy/test.png")).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            Logger.getLogger(NumberReader.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     private double analyze(BufferedImage example, BufferedImage test){
@@ -76,5 +105,21 @@ public class NumberReader {
         //return (double)offset/Math.pow(2*offset+1, 2);
         return (double)(example.getWidth()*example.getHeight()-offset)/(example.getWidth()*example.getHeight());
         //return (double)(example.getWidth()-offset)/example.getWidth();
+    }
+    
+    public int getResult(HashMap<Integer, Double> probs){
+        
+        //double min = Double.MAX_VALUE;
+        double max = 0d;
+        int num = -1;
+        
+        for (Integer i: probs.keySet()){
+            if (probs.get(i) > max){
+                max = probs.get(i);
+                num = i;
+            }
+        }
+        
+        return num;
     }
 }
