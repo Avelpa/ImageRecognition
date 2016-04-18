@@ -26,6 +26,7 @@ public class Main {
     
     private static void displayResults(HashMap<Integer, Double> results){
         
+        //double min = Double.MAX_VALUE;
         double max = 0d;
         int num = -1;
         
