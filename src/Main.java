@@ -32,6 +32,7 @@ public class Main {
         int num = reader.getResult(probs);
         System.out.println("Therefore... it's a " + num);
         
-        reader.consolidateResult(testImg, num);
+        if (probs.get(num) != 100.0)
+            reader.consolidateResult(num);
     }
 }

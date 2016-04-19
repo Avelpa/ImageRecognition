@@ -22,40 +22,60 @@ import java.util.logging.Logger;
  */
 public class NumberReader {
     
+    private boolean needConsolidate = true;
+    
     private HashMap<Integer, BufferedImage[]> examples;
     public void init(){
         examples = new HashMap();
-        int numNums = ImageLoader.countFiles("images/examples/");
-        
-        for (int i = 0; i < numNums; i ++){
-            int numExamples = ImageLoader.countFiles("images/examples/" + i);
+        File[] exampleList = (new File("images/examples")).listFiles();
+        for (File file: exampleList){
+            int i = Integer.parseInt(file.toPath().toString().replaceFirst("^.*\\D",""));
+            int numExamples = ImageLoader.countFiles(file);
             BufferedImage[] imgs = new BufferedImage[numExamples];
             for (int j = 0; j < numExamples; j ++){
-                imgs[j] = ImageLoader.loadImage("images/examples/" + i + "/" + i + "_" + j);
+                imgs[j] = ImageLoader.loadImage("images/examples/" + i + "/" + i + "_" + j + ".png");
             }
             examples.put(i, imgs);
         }
+        /*
+        for (int i = 0; i < numNums; i ++){
+            
+        }*/
     }
     
     public HashMap<Integer, Double> getProbs(BufferedImage img){
         HashMap<Integer, Double> probabilities = new HashMap();
         for (Integer num: examples.keySet()){
-            double totalProbs = 0d;
+            double maxProb = 0d;
             for (BufferedImage example: examples.get(num)){
                 double prob = analyze(example, img);
-                totalProbs += prob;
+                if (prob > maxProb)
+                    maxProb = prob;
             }
-            probabilities.put(num, totalProbs/examples.get(num).length);
+            //probabilities.put(num, totalProbs/examples.get(num).length);
+            probabilities.put(num, maxProb);
         }
         return probabilities;
     }
     
-    public void consolidateResult(BufferedImage img, int num){
+    public void consolidateResult(int num){
+        
+        if (!needConsolidate)
+            return;
+        
         Scanner input = new Scanner(System.in);
         System.out.print("Enter the number I should have guessed\n>> ");
         int realNum = input.nextInt();
+        
+        File exampleFolder = new File("images/examples/" + realNum);
+        if(!exampleFolder.exists()) {
+            exampleFolder.mkdirs();
+        } 
+        
+        int newIndex = ImageLoader.countFiles("images/examples/" + realNum);
+        
         try {
-            Files.copy((new File("images/tests/test.png")).toPath(), (new File("images/examples/testCopy/test.png")).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy((new File("images/tests/test.png")).toPath(), new File((new File("images/examples/" + realNum + "/" + realNum + "_" + newIndex + ".png")).getAbsolutePath()).toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             Logger.getLogger(NumberReader.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -74,12 +94,13 @@ public class NumberReader {
                 }
             }
         }
+        if (probSum/numBlack*100 == 100.0)
+            needConsolidate = false;
         return probSum/numBlack*100;
         //return probSum*example.getWidth()*example.getHeight();
     }
     
     private double analyzePixel(BufferedImage example, BufferedImage test, int x, int y){
-        
         int offset = 0;
         
         while (x - offset >= 0 || x + offset < example.getWidth() && y - offset >= 0 && y + offset < example.getHeight()){

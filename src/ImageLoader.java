@@ -28,8 +28,17 @@ public class ImageLoader {
     
     public static int countFiles(String filepath){
         int numFiles = 0;
-        
         File[] listFiles = new File(filepath).listFiles();
+        for (int i = 0; i < listFiles.length; i ++){
+            if (!listFiles[i].getName().endsWith(".db"))
+                numFiles ++;
+        }
+        
+        return numFiles;
+    }
+    public static int countFiles(File file){
+        int numFiles = 0;
+        File[] listFiles = file.listFiles();
         for (int i = 0; i < listFiles.length; i ++){
             if (!listFiles[i].getName().endsWith(".db"))
                 numFiles ++;
