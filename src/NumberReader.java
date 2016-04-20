@@ -31,10 +31,9 @@ public class NumberReader {
         for (File folder: exampleFolders){
             String exampleName = folder.getName();
             BufferedImage[] imgs = new BufferedImage[FileManager.countFiles(folder)];
-            
             // get each example image in the folder
             File[] files = folder.listFiles();
-            for (int i = 0; i < files.length; i ++){
+            for (int i = 0; i < imgs.length; i ++){
                 imgs[i] = FileManager.loadImage(files[i].getPath());
             }
             // populate examples hashmap
@@ -51,6 +50,8 @@ public class NumberReader {
         
         HashMap<String, Double> probabilities = new HashMap();
         
+        img = Bounds.cropImage(img);
+        
         // loop through all possible symbols
         for (String symbol: examples.keySet()){
             // best match for current example symbol
@@ -61,11 +62,11 @@ public class NumberReader {
                 if (prob > maxProb)
                     maxProb = prob;
             }
-            //probabilities.put(num, totalProbs/examples.get(num).length);
             probabilities.put(symbol, maxProb);
         }
         return probabilities;
     }
+    
     
     /**
      * If just all pixels equal, then bias towards one (cause the most "correct" whites)
@@ -124,7 +125,7 @@ public class NumberReader {
         return symbol;
     }
     
-    public void remember(String symbol, HashMap<String, Double> probs){
+    public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
         
         if (probs.get(symbol) == 1)
             return;
@@ -136,7 +137,8 @@ public class NumberReader {
         FileManager.assertFolderExists("images/examples/" + realSym);
         int newIndex = FileManager.countFiles("images/examples/" + realSym);
         
-        FileManager.duplicateFile("images/tests/test.png", (new File("images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png")).getAbsolutePath());
+        //FileManager.duplicateFile("images/tests/test.png", "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
+        FileManager.saveImage(test, "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
     }
     
 }

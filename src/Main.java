@@ -33,6 +33,6 @@ public class Main {
         String symbol = reader.getResult(probs);
         System.out.println("Therefore... it's a " + symbol);
         
-        reader.remember(symbol, probs);
+        reader.remember(testImg, symbol, probs);
     }
 }

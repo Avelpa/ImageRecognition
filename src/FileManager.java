@@ -54,19 +54,32 @@ public class FileManager {
             if (!listFiles[i].getName().endsWith(".db"))
                 numFiles ++;
         }
-        
         return numFiles;
     }
 
-    static void duplicateFile(String oldfile, String newfile) {
+    public static void duplicateFile(String oldfile, String newfile) {
         try {
-            Files.copy((new File(oldfile)).toPath(), new File(newfile).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy((new File(oldfile)).toPath(), new File(getAbsoluteFilePath(newfile)).toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             Logger.getLogger(NumberReader.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    static File[] getFileList(String imagesexamples) {
-        return (new File("images/examples")).listFiles();
+    public static File[] getFileList(String filepath) {
+        
+        return (new File(filepath)).listFiles();
+    }
+    
+    private static String getAbsoluteFilePath(String path){
+        return (new File(path)).getAbsolutePath();
+    }
+    
+    public static void saveImage(BufferedImage img, String filepath){
+        File outputfile = new File(getAbsoluteFilePath(filepath));
+        try {
+            ImageIO.write(img, "png", outputfile);
+        } catch (IOException ex) {
+            Logger.getLogger(FileManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
