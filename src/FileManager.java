@@ -2,6 +2,10 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 /*
@@ -14,7 +18,7 @@ import javax.imageio.ImageIO;
  *
  * @author Dmitry
  */
-public class ImageLoader {
+public class FileManager {
     
     public static BufferedImage loadImage(String filepath){
         BufferedImage img = null;
@@ -24,6 +28,13 @@ public class ImageLoader {
             System.err.println(e);
         }
         return img;
+    }
+    
+    public static void assertFolderExists(String folderpath){
+        File exampleFolder = new File(folderpath);
+        if(!exampleFolder.exists()) {
+            exampleFolder.mkdirs();
+        } 
     }
     
     public static int countFiles(String filepath){
@@ -45,5 +56,17 @@ public class ImageLoader {
         }
         
         return numFiles;
+    }
+
+    static void duplicateFile(String oldfile, String newfile) {
+        try {
+            Files.copy((new File(oldfile)).toPath(), new File(newfile).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            Logger.getLogger(NumberReader.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    static File[] getFileList(String imagesexamples) {
+        return (new File("images/examples")).listFiles();
     }
 }

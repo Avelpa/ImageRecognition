@@ -19,20 +19,20 @@ public class Main {
      */
     
     public static void main(String[] args) {
+        // create number reader
         NumberReader reader = new NumberReader();
         reader.init();
         
-        BufferedImage testImg = ImageLoader.loadImage("images/tests/test.png");
-        HashMap<Integer, Double> probs = reader.getProbs(testImg);
+        BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
+        HashMap<String, Double> probs = reader.getProbs(testImg);
         
-        for (Integer i: probs.keySet()){
-            System.out.print(i + ": " + probs.get(i) + ", ");
+        for (String symbol: probs.keySet()){
+            System.out.print(symbol + ": " + probs.get(symbol) + ", ");
             System.out.println();
         }
-        int num = reader.getResult(probs);
-        System.out.println("Therefore... it's a " + num);
+        String symbol = reader.getResult(probs);
+        System.out.println("Therefore... it's a " + symbol);
         
-        if (probs.get(num) != 100.0)
-            reader.consolidateResult(num);
+        reader.remember(symbol, probs);
     }
 }

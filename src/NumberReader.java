@@ -1,14 +1,8 @@
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,82 +16,72 @@ import java.util.logging.Logger;
  */
 public class NumberReader {
     
-    private boolean needConsolidate = true;
+    private HashMap<String, BufferedImage[]> examples;
     
-    private HashMap<Integer, BufferedImage[]> examples;
+    /**
+     * Loads all of the examples.
+     */
     public void init(){
         examples = new HashMap();
-        File[] exampleList = (new File("images/examples")).listFiles();
-        for (File file: exampleList){
-            int i = Integer.parseInt(file.toPath().toString().replaceFirst("^.*\\D",""));
-            int numExamples = ImageLoader.countFiles(file);
-            BufferedImage[] imgs = new BufferedImage[numExamples];
-            for (int j = 0; j < numExamples; j ++){
-                imgs[j] = ImageLoader.loadImage("images/examples/" + i + "/" + i + "_" + j + ".png");
-            }
-            examples.put(i, imgs);
-        }
-        /*
-        for (int i = 0; i < numNums; i ++){
+        
+        // get all of the example folders
+        File[] exampleFolders = FileManager.getFileList("images/examples");
+        
+        // parse each folder for the actual example images
+        for (File folder: exampleFolders){
+            String exampleName = folder.getName();
+            BufferedImage[] imgs = new BufferedImage[FileManager.countFiles(folder)];
             
-        }*/
+            // get each example image in the folder
+            File[] files = folder.listFiles();
+            for (int i = 0; i < files.length; i ++){
+                imgs[i] = FileManager.loadImage(files[i].getPath());
+            }
+            // populate examples hashmap
+            examples.put(exampleName, imgs);
+        }
     }
     
-    public HashMap<Integer, Double> getProbs(BufferedImage img){
-        HashMap<Integer, Double> probabilities = new HashMap();
-        for (Integer num: examples.keySet()){
+    /**
+     * Check each example image against input
+     * @param img image to be tested
+     * @return a collection of all the possibilities with a percentage confidence for each possibility
+     */
+    public HashMap<String, Double> getProbs(BufferedImage img){
+        
+        HashMap<String, Double> probabilities = new HashMap();
+        
+        // loop through all possible symbols
+        for (String symbol: examples.keySet()){
+            // best match for current example symbol
             double maxProb = 0d;
-            for (BufferedImage example: examples.get(num)){
+            // loop through all examples of current symbol
+            for (BufferedImage example: examples.get(symbol)){
                 double prob = analyze(example, img);
                 if (prob > maxProb)
                     maxProb = prob;
             }
             //probabilities.put(num, totalProbs/examples.get(num).length);
-            probabilities.put(num, maxProb);
+            probabilities.put(symbol, maxProb);
         }
         return probabilities;
     }
     
-    public void consolidateResult(int num){
-        
-        if (!needConsolidate)
-            return;
-        
-        Scanner input = new Scanner(System.in);
-        System.out.print("Enter the number I should have guessed\n>> ");
-        int realNum = input.nextInt();
-        
-        File exampleFolder = new File("images/examples/" + realNum);
-        if(!exampleFolder.exists()) {
-            exampleFolder.mkdirs();
-        } 
-        
-        int newIndex = ImageLoader.countFiles("images/examples/" + realNum);
-        
-        try {
-            Files.copy((new File("images/tests/test.png")).toPath(), new File((new File("images/examples/" + realNum + "/" + realNum + "_" + newIndex + ".png")).getAbsolutePath()).toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException ex) {
-            Logger.getLogger(NumberReader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
+    /**
+     * If just all pixels equal, then bias towards one (cause the most "correct" whites)
+     * If just black, then bias away from one (cause the least "correct" blacks)
+     */
     private double analyze(BufferedImage example, BufferedImage test){
         
-        double probSum = 0d;
-        int numBlack = 0;
+        double probAllPixels = 0d;
         
         for (int x = 0; x < test.getWidth(); x ++){
             for (int y = 0; y < test.getHeight(); y ++){
-                if (test.getRGB(x, y) == Color.BLACK.getRGB()){
-                    probSum += analyzePixel(example, test, x, y);
-                    numBlack ++;
-                }
+                probAllPixels += analyzePixel(example, test, x, y);
             }
         }
-        if (probSum/numBlack*100 == 100.0)
-            needConsolidate = false;
-        return probSum/numBlack*100;
-        //return probSum*example.getWidth()*example.getHeight();
+        
+        return probAllPixels/(test.getWidth()*test.getHeight());
     }
     
     private double analyzePixel(BufferedImage example, BufferedImage test, int x, int y){
@@ -123,24 +107,36 @@ public class NumberReader {
             }
             offset ++;
         }
-        //return (double)offset/Math.pow(2*offset+1, 2);
         return (double)(example.getWidth()*example.getHeight()-offset)/(example.getWidth()*example.getHeight());
-        //return (double)(example.getWidth()-offset)/example.getWidth();
     }
     
-    public int getResult(HashMap<Integer, Double> probs){
-        
+    public String getResult(HashMap<String, Double> probs){
         //double min = Double.MAX_VALUE;
         double max = 0d;
-        int num = -1;
+        String symbol = "";
         
-        for (Integer i: probs.keySet()){
-            if (probs.get(i) > max){
-                max = probs.get(i);
-                num = i;
+        for (String str: probs.keySet()){
+            if (probs.get(str) > max){
+                max = probs.get(str);
+                symbol = str;
             }
         }
-        
-        return num;
+        return symbol;
     }
+    
+    public void remember(String symbol, HashMap<String, Double> probs){
+        
+        if (probs.get(symbol) == 1)
+            return;
+        
+        Scanner input = new Scanner(System.in);
+        System.out.print("Enter the symbol I should have guessed\n>> ");
+        String realSym = input.next();
+        
+        FileManager.assertFolderExists("images/examples/" + realSym);
+        int newIndex = FileManager.countFiles("images/examples/" + realSym);
+        
+        FileManager.duplicateFile("images/tests/test.png", (new File("images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png")).getAbsolutePath());
+    }
+    
 }
