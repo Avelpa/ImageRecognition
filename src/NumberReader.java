@@ -1,4 +1,5 @@
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
@@ -50,8 +51,6 @@ public class NumberReader {
         
         HashMap<String, Double> probabilities = new HashMap();
         
-        img = Bounds.cropImage(img);
-        
         // loop through all possible symbols
         for (String symbol: examples.keySet()){
             // best match for current example symbol
@@ -72,43 +71,151 @@ public class NumberReader {
      * If just all pixels equal, then bias towards one (cause the most "correct" whites)
      * If just black, then bias away from one (cause the least "correct" blacks)
      */
-    private double analyze(BufferedImage example, BufferedImage test){
+    public double analyze(BufferedImage example, BufferedImage test){
         
-        double probAllPixels = 0d;
+        // get size intersect
+        int smallestWidth = getMin(example.getWidth(), test.getWidth());
+        int smallestHeight = getMin(example.getHeight(), test.getHeight());
         
-        for (int x = 0; x < test.getWidth(); x ++){
-            for (int y = 0; y < test.getHeight(); y ++){
-                probAllPixels += analyzePixel(example, test, x, y);
+        // scale each image to the intersect
+        double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
+        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
+        
+        double score = smallestWidth * smallestHeight;
+        //double penalty = 0d;
+        for (int y = 0; y < testScaled.length; y ++){
+            for (int x = 0; x < testScaled[y].length; x ++){
+                //score -= Math.abs(exampleScaled[y][x]-testScaled[y][x]);
+                score -= analyzePixel(exampleScaled, testScaled, x, y);
             }
         }
+        score /= smallestWidth*smallestHeight;
         
-        return probAllPixels/(test.getWidth()*test.getHeight());
+        // this chunk is questionable
+        //double testScaleWidth = (double)testScaled[0].length/smallestWidth;
+        //double testScaleHeight = (double)testScaled.length/smallestHeight;
+        
+        //score /= testScaleWidth*testScaleHeight;
+        
+        return score;
     }
     
-    private double analyzePixel(BufferedImage example, BufferedImage test, int x, int y){
-        int offset = 0;
+    public double[][] scaleImage(BufferedImage img, int width, int height){
         
-        while (x - offset >= 0 || x + offset < example.getWidth() && y - offset >= 0 && y + offset < example.getHeight()){
+        double[][] scaledImg = new double[height][width];
+        double scaleWidth = (double)width/img.getWidth();
+        double scaleHeight = (double)height/img.getHeight();
+        
+        int scaledX = 0, scaledY = 0;
+        
+        int xPrev = scaledX, yPrev = scaledY;
+        int occurrence = 0;
+        
+        double currentCell = 0;
+        
+        for (int y = 0; y < img.getHeight(); y ++){
+            for (int x = 0; x < img.getWidth(); x ++){
+                scaledX = (int)(x*scaleWidth);
+                scaledY = (int)(y*scaleHeight);
+                
+                if (xPrev != scaledX || yPrev != scaledY){
+                    currentCell /= occurrence;
+                    scaledImg[yPrev][xPrev] = currentCell;
+                    currentCell = 0;
+                    occurrence = 0;
+                    xPrev = scaledX;
+                    yPrev = scaledY;
+                }
+                occurrence ++;
+                if (img.getRGB(x, y) == Color.BLACK.getRGB())
+                    currentCell ++;
+            }
+        }
+        currentCell /= occurrence;
+        scaledImg[scaledY][scaledX] = currentCell;
+        
+        return scaledImg;
+    }
+    
+    private int getMin(int num1, int num2){
+        if (num1 < num2)
+            return num1;
+        return num2;
+    }
+    
+    public double analyzePixel(double[][] example, double[][] test, int x, int y){
+        int offset = 0;
+        double penalty = 0;
+        
+        boolean done = false;
+        while (x - offset >= 0 || x + offset < example[0].length || y - offset >= 0 || y + offset < example.length){
             
+            // left
             if (x-offset >= 0){
-                if (test.getRGB(x, y) == example.getRGB(x-offset, y))
-                    break;
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x-offset])){
+                    penalty += Math.abs(test[y][x]-example[y][x-offset]);
+                    done = true;
+                }
             }
-            if (x+offset < example.getWidth()){
-                if (test.getRGB(x, y) == example.getRGB(x+offset, y))
-                    break;
+            // right
+            if (x+offset < example[0].length && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x+offset])){
+                    penalty += Math.abs(test[y][x]-example[y][x+offset]);
+                    done = true;
+                }
+                
             }
-            if (y-offset >= 0){
-                if (test.getRGB(x, y) == example.getRGB(x, y-offset))
-                    break;
+            // top
+            if (y-offset >= 0 && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x])){
+                    penalty += Math.abs(test[y][x]-example[y-offset][x]);
+                    done = true;
+                }
             }
-            if (y+offset < example.getHeight()){
-                if (test.getRGB(x, y) == example.getRGB(x, y+offset))
-                    break;
+            // bottom
+            if (y+offset < example.length && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x])){
+                    penalty += Math.abs(test[y][x]-example[y+offset][x]);
+                    done = true;
+                }
             }
+            // top left
+            if (x-offset >= 0 && y-offset >= 0 && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x-offset])){
+                    penalty += Math.abs(test[y][x]-example[y-offset][x-offset]);
+                    done = true;
+                }
+            }
+            // top right
+            if (x+offset < example[0].length && y-offset >= 0 && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x+offset])){
+                    penalty += Math.abs(test[y][x]-example[y-offset][x+offset]);
+                    done = true;
+                }
+            }
+            // bottom left
+            if (x-offset >= 0 && y+offset < example.length && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x-offset])){
+                    penalty += Math.abs(test[y][x]-example[y+offset][x-offset]);
+                    done = true;
+                }
+            }
+            // bottom right
+            if (x+offset < example[0].length && y+offset < example.length && !done){
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x+offset])){
+                    penalty += Math.abs(test[y][x]-example[y+offset][x+offset]);
+                    done = true;
+                }
+            }
+            
+            if (done)
+                break;
+            
+            penalty ++; 
             offset ++;
         }
-        return (double)(example.getWidth()*example.getHeight()-offset)/(example.getWidth()*example.getHeight());
+        //return (double)(example.getWidth()*example.getHeight()-offset)/(example.getWidth()*example.getHeight());
+        return penalty;
     }
     
     public String getResult(HashMap<String, Double> probs){
@@ -122,12 +229,15 @@ public class NumberReader {
                 symbol = str;
             }
         }
+        
+        if (symbol.isEmpty())
+            symbol = "unknown";
         return symbol;
     }
     
     public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
         
-        if (probs.get(symbol) == 1)
+        if (probs.containsKey(symbol) && probs.get(symbol) == 1)
             return;
         
         Scanner input = new Scanner(System.in);

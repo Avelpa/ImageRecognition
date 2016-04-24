@@ -21,9 +21,9 @@ public class Bounds {
      * @param canvas the entire image
      */
     private static void setBounds(BufferedImage canvas){
-        left = Integer.MAX_VALUE;
+        left = canvas.getWidth();
         right = 0;
-        top = Integer.MAX_VALUE;
+        top = canvas.getHeight();
         bottom = 0;
         
         // iterate through every pixel and if it is not white, modify the bounds accordingly...
@@ -32,11 +32,11 @@ public class Bounds {
                 if (canvas.getRGB(x, y) != Color.WHITE.getRGB()){
                     if (x < left)
                         left = x;
-                    else if (x > right)
+                    if (x > right)
                         right = x;
                     if (y < top)
                         top = y;
-                    else if (y > bottom)
+                    if (y > bottom)
                         bottom = y;
                 }
             }
