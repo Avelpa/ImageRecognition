@@ -2,6 +2,7 @@
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -47,7 +48,7 @@ public class NumberReader {
      * @param img image to be tested
      * @return a collection of all the possibilities with a percentage confidence for each possibility
      */
-    public HashMap<String, Double> getProbs(BufferedImage img){
+    public HashMap<String, Double> parseSymbol(BufferedImage img){
         
         HashMap<String, Double> probabilities = new HashMap();
         
@@ -251,4 +252,45 @@ public class NumberReader {
         FileManager.saveImage(test, "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
     }
     
+    private ArrayList<Integer> getBreakPoints(BufferedImage img){
+        ArrayList<Integer> breakPoints = new ArrayList();
+        
+        boolean parsing = false;
+        for (int x = 0; x < img.getWidth(); x ++){
+            boolean allWhite = true;
+            for (int y = 0; y < img.getHeight(); y ++){
+                if (img.getRGB(x, y) != Color.WHITE.getRGB())
+                {
+                    parsing = true;
+                    allWhite = false;
+                }
+            }
+                    
+            if (allWhite && parsing){
+                parsing = false;
+                breakPoints.add(x);
+            }
+        }
+        
+        return breakPoints;
+    }
+    
+    public BufferedImage[] splitImage(BufferedImage img){
+        ArrayList<Integer> bps = getBreakPoints(img);
+        
+        if (bps.isEmpty())
+            return null;
+        BufferedImage[] imgs = new BufferedImage[bps.size()+1];
+        
+        for (int i = 0; i < bps.size(); i ++){
+            if (i == 0){
+                imgs[i] = img.getSubimage(0, 0, bps.get(i), img.getHeight());
+            } else {
+                imgs[i] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
+            }
+        }
+        imgs[imgs.length-1] = img.getSubimage(bps.get(bps.size()-1), 0, img.getWidth()-bps.get(bps.size()-1), img.getHeight());
+        
+        return imgs;
+    }
 }
