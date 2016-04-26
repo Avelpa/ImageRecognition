@@ -145,7 +145,6 @@ public class Main {
             System.out.println(sym);
             reader.remember(tokens[i], sym, probs);
         }
-        
     }
     
     private static void learn(){
