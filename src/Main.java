@@ -119,9 +119,19 @@ public class Main {
                 break;
             case "x":
                 ans = num1*num2;
+                operator = "*";
                 break;
             case "div":
                 ans = (double)num1/num2;
+                operator = "/";
+                break;
+            case "gt":
+                ans = num1 > num2 ? 1 : 0;
+                operator = ">";
+                break;
+            case "lt":
+                ans = num1 < num2 ? 1 : 0;
+                operator = "<";
                 break;
             default:
                 ans = Double.MIN_VALUE;
@@ -163,36 +173,5 @@ public class Main {
         System.out.println("Therefore... it's a " + symbol);
         
         reader.remember(testImg, symbol, probs);
-    }
-    
-    private static void doMath(){
-        NumberReader reader = new NumberReader();
-        reader.init();
-        
-        BufferedImage firstNumber = FileManager.loadImage("images/tests/firstNum.png");
-        firstNumber = Bounds.cropImage(firstNumber);
-        BufferedImage secondNumber = FileManager.loadImage("images/tests/secondNum.png");
-        secondNumber = Bounds.cropImage(secondNumber);
-        BufferedImage operation = FileManager.loadImage("images/tests/operation.png");
-        operation = Bounds.cropImage(operation);
-        
-        int num1 = Integer.parseInt(reader.getResult(reader.parseSymbol(firstNumber)));
-        int num2 = Integer.parseInt(reader.getResult(reader.parseSymbol(secondNumber)));
-        String op = reader.getResult(reader.parseSymbol(operation));
-        
-        switch(op){
-            case "+":
-                System.out.println(num1+num2);
-                break;
-            case "-":
-                System.out.println(num1-num2);
-                break;
-            case "x":
-                System.out.println(num1*num2);
-                break;
-            case "div":
-                System.out.println((double)num1/num2);
-                break;
-        }
     }
 }

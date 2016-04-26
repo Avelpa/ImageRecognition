@@ -19,6 +19,7 @@ import java.util.Scanner;
 public class NumberReader {
     
     private HashMap<String, BufferedImage[]> examples;
+    private final String examplesPath = "images/main/";
     
     /**
      * Loads all of the examples.
@@ -27,7 +28,7 @@ public class NumberReader {
         examples = new HashMap();
         
         // get all of the example folders
-        File[] exampleFolders = FileManager.getFileList("images/examples");
+        File[] exampleFolders = FileManager.getFileList(examplesPath);
         
         // parse each folder for the actual example images
         for (File folder: exampleFolders){
@@ -245,11 +246,11 @@ public class NumberReader {
         System.out.print("Enter the symbol I should have guessed\n>> ");
         String realSym = input.next();
         
-        FileManager.assertFolderExists("images/examples/" + realSym);
-        int newIndex = FileManager.countFiles("images/examples/" + realSym);
+        FileManager.assertFolderExists(examplesPath + realSym);
+        int newIndex = FileManager.countFiles(examplesPath + realSym);
         
         //FileManager.duplicateFile("images/tests/test.png", "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
-        FileManager.saveImage(test, "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
+        FileManager.saveImage(test, examplesPath + realSym + "/" + realSym + "_" + newIndex + ".png");
     }
     
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
