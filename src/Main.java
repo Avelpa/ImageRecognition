@@ -35,7 +35,6 @@ public class Main {
         }
         else
             learn();
-//        doMath2();
     }
     
     private static boolean isExpression(BufferedImage[] tokens)
@@ -148,12 +147,21 @@ public class Main {
         NumberReader reader = new NumberReader();
         reader.init();
         
+        String[] syms = new String[tokens.length];
+        HashMap<String, Double>[] superProbs = new HashMap[tokens.length];
         for(int i = 0; i < tokens.length; i ++){
             tokens[i] = Bounds.cropImage(tokens[i]);
             HashMap<String, Double> probs = reader.parseSymbol(tokens[i]);
             String sym = reader.getResult(probs);
-            System.out.println(sym);
-            reader.remember(tokens[i], sym, probs);
+            System.out.print(sym);
+            syms[i] = sym;
+            superProbs[i] = probs;
+        }
+        System.out.println();
+        for (int i = 0; i < syms.length; i ++)
+        {
+            System.out.println(syms[i]);
+            reader.remember(tokens[i], syms[i], superProbs[i]);
         }
     }
     
