@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Stack;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -87,17 +88,10 @@ public class NumberReader {
         //double penalty = 0d;
         for (int y = 0; y < testScaled.length; y ++){
             for (int x = 0; x < testScaled[y].length; x ++){
-                //score -= Math.abs(exampleScaled[y][x]-testScaled[y][x]);
                 score -= analyzePixel(exampleScaled, testScaled, x, y);
             }
         }
         score /= smallestWidth*smallestHeight;
-        
-        // this chunk is questionable
-        //double testScaleWidth = (double)testScaled[0].length/smallestWidth;
-        //double testScaleHeight = (double)testScaled.length/smallestHeight;
-        
-        //score /= testScaleWidth*testScaleHeight;
         
         return score;
     }
@@ -216,12 +210,10 @@ public class NumberReader {
             penalty ++; 
             offset ++;
         }
-        //return (double)(example.getWidth()*example.getHeight()-offset)/(example.getWidth()*example.getHeight());
         return penalty;
     }
     
     public String getResult(HashMap<String, Double> probs){
-        //double min = Double.MAX_VALUE;
         double max = 0d;
         String symbol = "";
         
@@ -249,7 +241,6 @@ public class NumberReader {
         FileManager.assertFolderExists(examplesPath + realSym);
         int newIndex = FileManager.countFiles(examplesPath + realSym);
         
-        //FileManager.duplicateFile("images/tests/test.png", "images/examples/" + realSym + "/" + realSym + "_" + newIndex + ".png");
         FileManager.saveImage(test, examplesPath + realSym + "/" + realSym + "_" + newIndex + ".png");
     }
     
@@ -274,6 +265,43 @@ public class NumberReader {
         }
         
         return breakPoints;
+    }
+    
+    public String infixToPostfix(String infix){
+        infix = infix.replaceAll(" ", "");
+        char[] tokens = infix.toCharArray();
+        String postfix = "";
+        
+        Stack<Character> syms = new Stack();
+        
+        for (Character ch: tokens){
+            if (Character.isDigit(ch))
+            {
+                postfix += ch;
+            } else if (ch == '('){
+                syms.push(ch);
+            } else if (ch == ')'){
+                while (syms.peek() != '('){
+                    postfix += syms.pop();
+                } 
+                syms.pop();
+            } else if (ch == '+' || ch == '-'){
+                while (!syms.isEmpty() && syms.peek() != '('){
+                    postfix += syms.pop();
+                }
+                syms.push(ch);
+            } else {
+                while (!syms.isEmpty() && syms.peek() != '+' && syms.peek() != '-' && syms.peek() != '('){
+                    postfix += syms.pop();
+                }
+                syms.push(ch);
+            }
+        }
+        while (!syms.isEmpty())
+        {
+            postfix += syms.pop();
+        }
+        return postfix;
     }
     
     public BufferedImage[] splitImage(BufferedImage img){

@@ -2,6 +2,7 @@
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Stack;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -29,7 +30,7 @@ public class Main {
         BufferedImage[] tokens = reader.splitImage(testImg);
         if (tokens != null){
             if (isExpression(tokens))
-                doMath2(tokens);
+                doMath(tokens);
             else
                 learnBulk(tokens);
         }
@@ -78,7 +79,7 @@ public class Main {
         return n1parsed && n2parsed && !operator.isEmpty();
     }
     
-    private static void doMath2(BufferedImage[] tokens)
+    private static void doMath(BufferedImage[] tokens)
     {
         NumberReader reader = new NumberReader();
         reader.init();
@@ -141,6 +142,39 @@ public class Main {
         Scanner in = new Scanner(System.in);
         if (in.nextDouble() != ans){
             learnBulk(tokens);
+        }
+    }
+    public double evaluatePostfix(String postfix)
+    {
+        char[] tokens = postfix.toCharArray();
+        Stack<Double> nums = new Stack();
+        
+        for (Character ch: tokens)
+        {
+            if (Character.isDigit(ch)){
+                nums.push((double)Character.getNumericValue(ch));
+            } else {
+                nums.push(eval(nums.pop(), nums.pop(), ch));
+            }
+        }
+        
+        return nums.pop();
+    }
+    
+    private double eval(double num2, double num1, char op)
+    {
+        switch(op)
+        {
+            case '+':
+                return num1+num2;
+            case '-':
+                return num1-num2;
+            case '*':
+                return num1*num2;
+            case '/':
+                return num1/num2;
+            default:
+                return Double.MIN_VALUE;
         }
     }
     

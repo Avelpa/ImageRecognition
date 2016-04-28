@@ -1,3 +1,8 @@
+
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -10,16 +15,89 @@
 public class Eval {
     public static void main(String[] args)
     {
-        String[] equation = "1 + 2 / 3 - 4 * 5".split(" ");
-        double answer = Double.parseDouble(equation[0]);
-        answer = eval(answer, equation[1], Double.parseDouble(equation[2]));
-        System.out.println(answer);
-        answer = eval(answer, equation[3], Double.parseDouble(equation[4]));
-        System.out.println(answer);
-        
-        
+        String postfix = infixToPostfix("2*2");
+        try {
+            double ans = evaluatePostfix(postfix);
+            System.out.println(ans);
+        } catch (Exception e)
+        {
+            System.out.println("RROr");
+        }
     }
     
+    
+    public static String infixToPostfix(String infix){
+        infix = infix.replaceAll(" ", "");
+        char[] tokens = infix.toCharArray();
+        String postfix = "";
+        
+        Stack<Character> syms = new Stack();
+        
+        for (Character ch: tokens){
+            if (Character.isDigit(ch))
+            {
+                postfix += ch;
+            } else if (ch == '('){
+                syms.push(ch);
+            } else if (ch == ')'){
+                while (syms.peek() != '('){
+                    postfix += syms.pop();
+                } 
+                syms.pop();
+            } else if (ch == '+' || ch == '-'){
+                while (!syms.isEmpty() && syms.peek() != '('){
+                    postfix += syms.pop();
+                }
+                syms.push(ch);
+            } else {
+                while (!syms.isEmpty() && syms.peek() != '+' && syms.peek() != '-' && syms.peek() != '('){
+                    postfix += syms.pop();
+                }
+                syms.push(ch);
+            }
+        }
+        while (!syms.isEmpty())
+        {
+            postfix += syms.pop();
+        }
+        return postfix;
+    }
+    
+    public static double evaluatePostfix(String postfix)
+    {
+        char[] tokens = postfix.toCharArray();
+        Stack<Double> nums = new Stack();
+        
+        for (Character ch: tokens)
+        {
+            if (Character.isDigit(ch)){
+                nums.push((double)Character.getNumericValue(ch));
+            } else {
+                nums.push(eval(nums.pop(), nums.pop(), ch));
+            }
+        }
+        
+        return nums.pop();
+    }
+    
+    private static double eval(double num2, double num1, char op)
+    {
+        switch(op)
+        {
+            case '+':
+                return num1+num2;
+            case '-':
+                return num1-num2;
+            case '*':
+                return num1*num2;
+            case '/':
+                return num1/num2;
+            default:
+                return Double.MIN_VALUE;
+        }
+    }
+    
+    /*
     private static double eval(double num1, String op, double num2)
     {
         switch (op){
@@ -34,5 +112,5 @@ public class Eval {
             default:
                 return Double.MIN_VALUE;
         }
-    }
+    }*/
 }
