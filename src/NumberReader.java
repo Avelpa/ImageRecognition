@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 import java.util.Stack;
 
 /*
@@ -22,9 +21,9 @@ public class NumberReader {
     private HashMap<String, BufferedImage[]> examples;
     private final String examplesPath = "images/main/";
     
-    /**
-     * Loads all of the examples.
-     */
+//    /**
+//     * Loads all of the examples.
+//     */
     public void init(){
         examples = new HashMap();
         
@@ -50,7 +49,7 @@ public class NumberReader {
      * @param img image to be tested
      * @return a collection of all the possibilities with a percentage confidence for each possibility
      */
-    public HashMap<String, Double> parseSymbol(BufferedImage img){
+    private Symbol getSymbol(BufferedImage img){
         
         HashMap<String, Double> probabilities = new HashMap();
         
@@ -66,7 +65,19 @@ public class NumberReader {
             }
             probabilities.put(symbol, maxProb);
         }
-        return probabilities;
+        return new Symbol(probabilities);
+    }
+    
+    public Symbol[] getSymbols(BufferedImage img)
+    {
+        BufferedImage[] splitImg = splitImage(img);
+        
+        Symbol[] symbols = new Symbol[splitImg.length];
+        for (int i = 0; i < symbols.length; i ++)
+        {
+            symbols[i] = getSymbol(splitImg[i]);
+        }
+        return symbols;
     }
     
     
@@ -94,43 +105,6 @@ public class NumberReader {
         score /= smallestWidth*smallestHeight;
         
         return score;
-    }
-    
-    public double[][] scaleImage(BufferedImage img, int width, int height){
-        
-        double[][] scaledImg = new double[height][width];
-        double scaleWidth = (double)width/img.getWidth();
-        double scaleHeight = (double)height/img.getHeight();
-        
-        int scaledX = 0, scaledY = 0;
-        
-        int xPrev = scaledX, yPrev = scaledY;
-        int occurrence = 0;
-        
-        double currentCell = 0;
-        
-        for (int y = 0; y < img.getHeight(); y ++){
-            for (int x = 0; x < img.getWidth(); x ++){
-                scaledX = (int)(x*scaleWidth);
-                scaledY = (int)(y*scaleHeight);
-                
-                if (xPrev != scaledX || yPrev != scaledY){
-                    currentCell /= occurrence;
-                    scaledImg[yPrev][xPrev] = currentCell;
-                    currentCell = 0;
-                    occurrence = 0;
-                    xPrev = scaledX;
-                    yPrev = scaledY;
-                }
-                occurrence ++;
-                if (img.getRGB(x, y) == Color.BLACK.getRGB())
-                    currentCell ++;
-            }
-        }
-        currentCell /= occurrence;
-        scaledImg[scaledY][scaledX] = currentCell;
-        
-        return scaledImg;
     }
     
     private int getMin(int num1, int num2){
@@ -213,40 +187,23 @@ public class NumberReader {
         return penalty;
     }
     
-    public String getResult(HashMap<String, Double> probs){
-        double max = 0d;
-        String symbol = "";
-        
-        for (String str: probs.keySet()){
-            if (probs.get(str) > max){
-                max = probs.get(str);
-                symbol = str;
-            }
-        }
-        
-        if (symbol.isEmpty())
-            symbol = "unknown";
-        return symbol;
-    }
-    
-    public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
-        
-        if (probs.containsKey(symbol) && probs.get(symbol) == 1)
-            return;
-        
-        Scanner input = new Scanner(System.in);
-        System.out.print("Enter the symbol I should have guessed\n>> ");
-        String realSym = input.next();
-        
-        FileManager.assertFolderExists(examplesPath + realSym);
-        int newIndex = FileManager.countFiles(examplesPath + realSym);
-        
-        FileManager.saveImage(test, examplesPath + realSym + "/" + realSym + "_" + newIndex + ".png");
-    }
+//    public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
+//        
+//        if (probs.containsKey(symbol) && probs.get(symbol) == 1)
+//            return;
+//        
+//        Scanner input = new Scanner(System.in);
+//        System.out.print("Enter the symbol I should have guessed\n>> ");
+//        String realSym = input.next();
+//        
+//        FileManager.assertFolderExists(examplesPath + realSym);
+//        int newIndex = FileManager.countFiles(examplesPath + realSym);
+//        
+//        FileManager.saveImage(test, examplesPath + realSym + "/" + realSym + "_" + newIndex + ".png");
+//    }
     
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
         ArrayList<Integer> breakPoints = new ArrayList();
-        
         boolean parsing = false;
         for (int x = 0; x < img.getWidth(); x ++){
             boolean allWhite = true;
@@ -304,6 +261,11 @@ public class NumberReader {
         return postfix;
     }
     
+    /**
+     * Splits an image horizontally into  cropped sub-images
+     * @param img
+     * @return 
+     */
     public BufferedImage[] splitImage(BufferedImage img){
         ArrayList<Integer> bps = getBreakPoints(img);
         
@@ -323,5 +285,44 @@ public class NumberReader {
         imgs[imgs.length-1] = Bounds.cropImage(imgs[imgs.length-1]);
         
         return imgs;
+    }
+    
+    public double[][] scaleImage(BufferedImage img, int width, int height){
+        
+        double[][] scaledImg = new double[height][width];
+        double scaleWidth = (double)width/img.getWidth();
+        double scaleHeight = (double)height/img.getHeight();
+        
+        int scaledX = 0, scaledY = 0;
+        
+        int xPrev = scaledX, yPrev = scaledY;
+        int occurrence = 0;
+        
+        double currentCell = 0;
+        
+        for (int y = 0; y < img.getHeight(); y ++){
+            for (int x = 0; x < img.getWidth(); x ++){
+                scaledX = (int)(x*scaleWidth);
+                scaledY = (int)(y*scaleHeight);
+                
+                if (xPrev != scaledX || yPrev != scaledY){
+                    currentCell /= occurrence;
+//                    currentCell /= (scaleWidth+scaleHeight);
+                    scaledImg[yPrev][xPrev] = currentCell;
+                    currentCell = 0;
+                    occurrence = 0;
+                    xPrev = scaledX;
+                    yPrev = scaledY;
+                }
+                occurrence ++;
+                if (img.getRGB(x, y) == Color.BLACK.getRGB())
+                    currentCell ++;
+            }
+        }
+        currentCell /= occurrence;
+//        currentCell /= (scaleWidth+scaleHeight);
+        scaledImg[scaledY][scaledX] = currentCell;
+        
+        return scaledImg;
     }
 }
