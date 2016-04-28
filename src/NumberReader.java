@@ -20,7 +20,7 @@ import java.util.Stack;
 public class NumberReader {
     
     private HashMap<String, BufferedImage[]> examples;
-    private final String examplesPath = "images/russian/";
+    private final String examplesPath = "images/main/";
     
     /**
      * Loads all of the examples.
@@ -317,8 +317,10 @@ public class NumberReader {
             } else {
                 imgs[i] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
             }
+            imgs[i] = Bounds.cropImage(imgs[i]);
         }
         imgs[imgs.length-1] = img.getSubimage(bps.get(bps.size()-1), 0, img.getWidth()-bps.get(bps.size()-1), img.getHeight());
+        imgs[imgs.length-1] = Bounds.cropImage(imgs[imgs.length-1]);
         
         return imgs;
     }
