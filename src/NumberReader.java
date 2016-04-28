@@ -20,7 +20,7 @@ import java.util.Stack;
 public class NumberReader {
     
     private HashMap<String, BufferedImage[]> examples;
-    private final String examplesPath = "images/main/";
+    private final String examplesPath = "images/russian/";
     
     /**
      * Loads all of the examples.
