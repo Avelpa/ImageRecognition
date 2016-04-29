@@ -1,4 +1,5 @@
 
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 /*
@@ -26,8 +27,9 @@ public class Symbol {
     private String displayString;
     private HashMap<String, Double> probabilities;
     private double prob;
+    private BufferedImage img;
     
-    public Symbol(HashMap<String, Double> probabilities)
+    public Symbol(HashMap<String, Double> probabilities, BufferedImage img)
     {  
         this.probabilities = probabilities;
         identifySymbol(probabilities);
@@ -37,6 +39,7 @@ public class Symbol {
         } else {
             displayString = name;
         }
+        this.img = img;
     }
     
     private void identifySymbol(HashMap<String, Double> probabilities)
@@ -54,5 +57,20 @@ public class Symbol {
     public String getDisplayString()
     {
         return displayString;
+    }
+    
+    public double getProb()
+    {
+        return prob;
+    }
+    
+    public String getName()
+    {
+        return name;
+    }
+    
+    public BufferedImage getImage()
+    {
+        return img;
     }
 }

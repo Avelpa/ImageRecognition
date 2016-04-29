@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.Stack;
 
 /*
@@ -65,9 +66,10 @@ public class NumberReader {
             }
             probabilities.put(symbol, maxProb);
         }
-        return new Symbol(probabilities);
+        return new Symbol(probabilities, img);
     }
     
+    // takes an image and returns all of the parsed symbols from it
     public Symbol[] getSymbols(BufferedImage img)
     {
         BufferedImage[] splitImg = splitImage(img);
@@ -185,6 +187,21 @@ public class NumberReader {
             offset ++;
         }
         return penalty;
+    }
+    
+    public void remember(Symbol sym)
+    {
+        if (sym.getProb() == 1)
+        {
+            System.out.println("Guessed: " + sym.getName() + " (" + sym.getDisplayString() + ") with 100% confidence");
+            return;
+        }
+        
+        System.out.println("Guessed: " + sym.getName() + " (" + sym.getDisplayString() + ") with " + sym.getProb() + " confidence.\nReal symbol >> ");
+        Scanner in = new Scanner(System.in);
+        String realName = in.next();
+        
+        saveImage(sym.getImage(), realName);
     }
     
 //    public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
