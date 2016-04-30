@@ -15,7 +15,7 @@ import java.util.Stack;
 public class Eval {
     public static void main(String[] args)
     {
-        String postfix = infixToPostfix("1+2+3");
+        String postfix = infixToPostfix("1+2+30");
         try {
             double ans = evaluatePostfix(postfix);
             System.out.println(ans);

@@ -189,38 +189,42 @@ public class NumberReader {
         return penalty;
     }
     
-    public void remember(Symbol sym)
+    public void remember(Symbol[] symbols, boolean brief)
+    {
+        for (Symbol sym: symbols){
+            remember(sym, brief);
+        }
+    }
+    
+    private void remember(Symbol sym, boolean brief)
     {
         if (sym.getProb() == 1)
-        {
-            System.out.println("Guessed: " + sym.getName() + " (" + sym.getDisplayString() + ") with 100% confidence");
+        {   
+            if (!brief)
+                System.out.println("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with 100% confidence");
             return;
         }
         
-        System.out.println("Guessed: " + sym.getName() + " (" + sym.getDisplayString() + ") with " + sym.getProb() + " confidence.\nReal symbol >> ");
-        Scanner in = new Scanner(System.in);
-        String realName = in.next();
+        String realName;
         
-        saveImage(sym.getImage(), realName);
+        if (!brief){
+            System.out.print("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with " + sym.getProb()*100 + " confidence.\nReal symbol >> ");
+            Scanner in = new Scanner(System.in);
+            realName = in.next();
+        } else {
+            realName = sym.getName();
+        }
+        
+        FileManager.assertFolderExists(examplesPath + realName);
+        int newIndex = FileManager.countFiles(examplesPath + realName);
+        
+        FileManager.saveImage(sym.getImage(), examplesPath + realName + "/" + realName + "_" + newIndex + ".png");
     }
-    
-//    public void remember(BufferedImage test, String symbol, HashMap<String, Double> probs){
-//        
-//        if (probs.containsKey(symbol) && probs.get(symbol) == 1)
-//            return;
-//        
-//        Scanner input = new Scanner(System.in);
-//        System.out.print("Enter the symbol I should have guessed\n>> ");
-//        String realSym = input.next();
-//        
-//        FileManager.assertFolderExists(examplesPath + realSym);
-//        int newIndex = FileManager.countFiles(examplesPath + realSym);
-//        
-//        FileManager.saveImage(test, examplesPath + realSym + "/" + realSym + "_" + newIndex + ".png");
-//    }
     
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
         ArrayList<Integer> breakPoints = new ArrayList();
+        breakPoints.add(0);
+        
         boolean parsing = false;
         for (int x = 0; x < img.getWidth(); x ++){
             boolean allWhite = true;
@@ -237,45 +241,96 @@ public class NumberReader {
                 breakPoints.add(x);
             }
         }
+        breakPoints.add(img.getWidth());
         
         return breakPoints;
     }
     
-    public String infixToPostfix(String infix){
-        infix = infix.replaceAll(" ", "");
-        char[] tokens = infix.toCharArray();
-        String postfix = "";
+    public String infixToPostfix(Symbol[] symbols){
+        StringBuilder postfix = new StringBuilder(symbols.length);
         
-        Stack<Character> syms = new Stack();
+        Stack<String> syms = new Stack();
         
-        for (Character ch: tokens){
-            if (Character.isDigit(ch))
+        boolean buildingNum = true;
+        for (Symbol sym: symbols){
+            String str = sym.getDisplayString();
+            if (str.matches("\\d+"))
             {
-                postfix += ch;
-            } else if (ch == '('){
-                syms.push(ch);
-            } else if (ch == ')'){
-                while (syms.peek() != '('){
-                    postfix += syms.pop();
-                } 
-                syms.pop();
-            } else if (ch == '+' || ch == '-'){
-                while (!syms.isEmpty() && syms.peek() != '('){
-                    postfix += syms.pop();
-                }
-                syms.push(ch);
+                buildingNum = true;
+                postfix.append(str);
             } else {
-                while (!syms.isEmpty() && syms.peek() != '+' && syms.peek() != '-' && syms.peek() != '('){
-                    postfix += syms.pop();
+                if (buildingNum){
+                    postfix.append(",");
+                    buildingNum = false;
                 }
-                syms.push(ch);
+                if (str.equals("(")){
+                    syms.push(str);
+                } else if (str.equals(")")){
+                    while (!syms.peek().equals("(")){
+                        postfix.append(syms.pop());
+                        postfix.append(",");
+                    } 
+                    syms.pop();
+                } else if (str.equals("+") || str.equals("-")){
+                    while (!syms.isEmpty() && !syms.peek().equals("(")){
+                        postfix.append(syms.pop());
+                        postfix.append(",");
+                    }
+                    syms.push(str);
+                } else {
+                    while (!syms.isEmpty() && !syms.peek().equals("+") && !syms.peek().equals("-") && !syms.peek().equals("(")){
+                        postfix.append(syms.pop());
+                        postfix.append(",");
+                    }
+                    syms.push(str);
+                }
             }
         }
         while (!syms.isEmpty())
         {
-            postfix += syms.pop();
+            if (buildingNum)
+            {
+                postfix.append(",");
+                buildingNum = false;
+            }
+            postfix.append(syms.pop());
+            postfix.append(",");
         }
-        return postfix;
+        return postfix.toString();
+    }
+    
+    public double evaluatePostfix(String postfix) {
+        String[] tokens = postfix.split(",");
+        Stack<Double> nums = new Stack();
+
+        for (String str : tokens) {
+            if (str.matches("\\d+")) {
+                nums.push((double)Integer.parseInt(str));
+            } else {
+                nums.push(eval(nums.pop(), nums.pop(), str));
+            }
+        }
+
+        return nums.pop();
+    }
+
+    private double eval(double num2, double num1, String op) {
+        switch (op) {
+            case "+":
+                return num1 + num2;
+            case "-":
+                return num1 - num2;
+            case "*":
+                return num1 * num2;
+            case "/":
+                return num1 / num2;
+            case "<":
+                return (num1 < num2) ? 1 : 0;
+            case ">":
+                return (num1 > num2) ? 1 : 0;
+            default:
+                return Double.MIN_VALUE;
+        }
     }
     
     /**
@@ -288,19 +343,12 @@ public class NumberReader {
         
         if (bps.isEmpty())
             return null;
-        BufferedImage[] imgs = new BufferedImage[bps.size()+1];
+        BufferedImage[] imgs = new BufferedImage[bps.size()-1];
         
-        for (int i = 0; i < bps.size(); i ++){
-            if (i == 0){
-                imgs[i] = img.getSubimage(0, 0, bps.get(i), img.getHeight());
-            } else {
-                imgs[i] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
-            }
-            imgs[i] = Bounds.cropImage(imgs[i]);
+        for (int i = 1; i < bps.size(); i ++){
+            imgs[i-1] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
+            imgs[i-1] = Bounds.cropImage(imgs[i-1]);
         }
-        imgs[imgs.length-1] = img.getSubimage(bps.get(bps.size()-1), 0, img.getWidth()-bps.get(bps.size()-1), img.getHeight());
-        imgs[imgs.length-1] = Bounds.cropImage(imgs[imgs.length-1]);
-        
         return imgs;
     }
     
@@ -324,7 +372,6 @@ public class NumberReader {
                 
                 if (xPrev != scaledX || yPrev != scaledY){
                     currentCell /= occurrence;
-//                    currentCell /= (scaleWidth+scaleHeight);
                     scaledImg[yPrev][xPrev] = currentCell;
                     currentCell = 0;
                     occurrence = 0;
@@ -337,7 +384,6 @@ public class NumberReader {
             }
         }
         currentCell /= occurrence;
-//        currentCell /= (scaleWidth+scaleHeight);
         scaledImg[scaledY][scaledX] = currentCell;
         
         return scaledImg;

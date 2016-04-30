@@ -1,9 +1,6 @@
 
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Scanner;
-import java.util.Stack;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -28,59 +25,55 @@ public class Main {
         testImg = Bounds.cropImage(testImg);
         
         Symbol[] symbols = reader.getSymbols(testImg);
-        for (Symbol sym: symbols)
+        
+        doMath(symbols, reader);
+        
+    }
+    
+    private static void printSyms(Symbol[] syms, String delimeter)
+    {
+        for (Symbol sym: syms)
         {
             System.out.print(sym.getDisplayString());
+            System.out.print(delimeter);
         }
+    }
+    private static void printSyms(Symbol[] syms)
+    {
+        printSyms(syms, "");
         System.out.println();
     }
+    
+    private static void learn(Symbol[] symbols, NumberReader reader)
+    {
+        printSyms(symbols);
+        
+        reader.remember(symbols, false);
+    }
+    
+    private static void doMath(Symbol[] symbols, NumberReader reader)
+    {
+        try {
+            String postfix = reader.infixToPostfix(symbols);
+            double ans = reader.evaluatePostfix(postfix);
+            
+            printSyms(symbols, " ");
+            System.out.print("= ");
+            System.out.println(ans);
+            
+            System.out.print("right?\n>> ");
+            Scanner in = new Scanner(System.in);
+            if (in.next().startsWith("n"))
+                reader.remember(symbols, false);
+            else
+                reader.remember(symbols, true);
+        } catch (Exception e) {
+            System.out.println("INVALID EXPRESSION");
+            printSyms(symbols);
+            reader.remember(symbols, false);
+        }
+    }
 
-//    /**
-//     * @param args the command line arguments
-//     */
-//    public static void main(String[] args) {
-//        NumberReader reader = new NumberReader();
-//        reader.init();
-//
-//        BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
-//        testImg = Bounds.cropImage(testImg);
-//
-//        BufferedImage[] tokens = reader.splitImage(testImg);
-//
-//        if (tokens != null) {
-//            Symbol[] syms = new Symbol[tokens.length];
-//
-//            for (int i = 0; i < syms.length; i++) {
-//                syms[i] = reader.getSymbol(tokens[i]);
-//                System.out.print(syms[i].getDisplayString());
-//            }
-////            try {
-////                String postfix = infixToPostfix(toString(syms));
-////                double answer = evaluatePostfix(postfix);
-////                System.out.println("=" + answer);
-////            } catch (Exception e) {
-////                System.err.println("Error parsing expression: " + e);
-////            }
-//            /*
-//             if (isExpression(tokens))
-//             doMath(tokens);
-//             else
-//             learnBulk(tokens);*/
-////        } else {
-////            learn();
-////        }
-//        }
-//    }
-//    
-//    private static String toString(String[] arr)
-//    {
-//        StringBuilder builder = new StringBuilder();
-//        for(String s : arr) {
-//            builder.append(s);
-//        }
-//        return builder.toString();
-//    }
-//
 //    public static String infixToPostfix(String infix) {
 //        infix = infix.replaceAll(" ", "");
 //        char[] tokens = infix.toCharArray();
