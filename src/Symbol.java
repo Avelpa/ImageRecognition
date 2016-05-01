@@ -73,4 +73,12 @@ public class Symbol {
     {
         return img;
     }
+    
+    public void printProbs()
+    {
+        for (String symName: probabilities.keySet())
+        {
+            System.out.println(symName + ": " + probabilities.get(symName));
+        }
+    }
 }

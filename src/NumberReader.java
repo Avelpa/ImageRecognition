@@ -20,7 +20,12 @@ import java.util.Stack;
 public class NumberReader {
     
     private HashMap<String, BufferedImage[]> examples;
-    private final String examplesPath = "images/main/";
+    private final String examplesPath;
+    
+    public NumberReader(String examplesPath)
+    {
+        this.examplesPath = examplesPath;
+    }
     
 //    /**
 //     * Loads all of the examples.
@@ -105,6 +110,9 @@ public class NumberReader {
             }
         }
         score /= smallestWidth*smallestHeight;
+        
+        if (Math.abs((test.getWidth()/testScaled[0].length)/(test.getHeight()/testScaled.length)-1) >= 0.2)
+            score *= 0.8;
         
         return score;
     }
@@ -198,6 +206,7 @@ public class NumberReader {
     
     private void remember(Symbol sym, boolean brief)
     {
+//        sym.printProbs();
         if (sym.getProb() == 1)
         {   
             if (!brief)
@@ -251,10 +260,10 @@ public class NumberReader {
         
         Stack<String> syms = new Stack();
         
-        boolean buildingNum = true;
+        boolean buildingNum = false;
         for (Symbol sym: symbols){
             String str = sym.getDisplayString();
-            if (str.matches("\\d+"))
+            if (str.matches("[0-9]"))
             {
                 buildingNum = true;
                 postfix.append(str);
@@ -304,13 +313,12 @@ public class NumberReader {
         Stack<Double> nums = new Stack();
 
         for (String str : tokens) {
-            if (str.matches("\\d+")) {
+            if (str.matches("[0-9]+")) {
                 nums.push((double)Integer.parseInt(str));
             } else {
                 nums.push(eval(nums.pop(), nums.pop(), str));
             }
         }
-
         return nums.pop();
     }
 
