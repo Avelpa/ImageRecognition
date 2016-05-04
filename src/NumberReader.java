@@ -19,8 +19,10 @@ import java.util.Stack;
  */
 public class NumberReader {
     
-    private HashMap<String, BufferedImage[]> examples;
+    private HashMap<String, BufferedImage> examples;
     private final String examplesPath;
+    
+    private final int WIDTH = 50, HEIGHT = 50;
     
     public NumberReader(String examplesPath)
     {
@@ -39,14 +41,12 @@ public class NumberReader {
         // parse each folder for the actual example images
         for (File folder: exampleFolders){
             String exampleName = folder.getName();
-            BufferedImage[] imgs = new BufferedImage[FileManager.countFiles(folder)];
             // get each example image in the folder
             File[] files = folder.listFiles();
-            for (int i = 0; i < imgs.length; i ++){
-                imgs[i] = FileManager.loadImage(files[i].getPath());
-            }
+            BufferedImage img = FileManager.loadImage(files[0].getPath());
+            
             // populate examples hashmap
-            examples.put(exampleName, imgs);
+            examples.put(exampleName, img);
         }
     }
     
@@ -62,14 +62,8 @@ public class NumberReader {
         // loop through all possible symbols
         for (String symbol: examples.keySet()){
             // best match for current example symbol
-            double maxProb = 0d;
-            // loop through all examples of current symbol
-            for (BufferedImage example: examples.get(symbol)){
-                double prob = analyze(example, img);
-                if (prob > maxProb)
-                    maxProb = prob;
-            }
-            probabilities.put(symbol, maxProb);
+            double prob = analyze(examples.get(symbol), img);
+            probabilities.put(symbol, prob);
         }
         return new Symbol(probabilities, img);
     }
@@ -88,33 +82,39 @@ public class NumberReader {
     }
     
     
-    /**
-     * If just all pixels equal, then bias towards one (cause the most "correct" whites)
-     * If just black, then bias away from one (cause the least "correct" blacks)
-     */
     public double analyze(BufferedImage example, BufferedImage test){
         
+        if (test.getWidth() < WIDTH && test.getHeight() < HEIGHT)
+        {
+            System.out.println("ERROR image too small");
+            return 0;
+        }
+        
         // get size intersect
-        int smallestWidth = getMin(example.getWidth(), test.getWidth());
-        int smallestHeight = getMin(example.getHeight(), test.getHeight());
+        int smallestWidth = getMin(WIDTH, test.getWidth());
+        int smallestHeight = getMin(HEIGHT, test.getHeight());
         
         // scale each image to the intersect
-        double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
-        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
         
-        double score = smallestWidth * smallestHeight;
+        //double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
+        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
+       /* 
+        double score = 0;
         //double penalty = 0d;
         for (int y = 0; y < testScaled.length; y ++){
             for (int x = 0; x < testScaled[y].length; x ++){
-                score -= analyzePixel(exampleScaled, testScaled, x, y);
+                score += analyzePixel(example, testScaled, x, y);
+            }
+        }*/
+        for (int y = 0; y < testScaled.length; y ++)
+        {
+            for (int x = 0; x < testScaled[0].length; x ++)
+            {
+                System.out.print(testScaled[y][x]);
             }
         }
-        score /= smallestWidth*smallestHeight;
-        
-        if (Math.abs((test.getWidth()/testScaled[0].length)/(test.getHeight()/testScaled.length)-1) >= 0.2)
-            score *= 0.8;
-        
-        return score;
+        System.out.println();
+        return 0d;
     }
     
     private int getMin(int num1, int num2){
@@ -362,7 +362,7 @@ public class NumberReader {
     
     public double[][] scaleImage(BufferedImage img, int width, int height){
         
-        double[][] scaledImg = new double[height][width];
+        double[][] scaledImg = new double[WIDTH][HEIGHT];
         double scaleWidth = (double)width/img.getWidth();
         double scaleHeight = (double)height/img.getHeight();
         
@@ -380,7 +380,7 @@ public class NumberReader {
                 
                 if (xPrev != scaledX || yPrev != scaledY){
                     currentCell /= occurrence;
-                    scaledImg[yPrev][xPrev] = currentCell;
+                    scaledImg[yPrev+(HEIGHT-img.getHeight())/2][xPrev+(WIDTH-img.getWidth())/2] = currentCell;
                     currentCell = 0;
                     occurrence = 0;
                     xPrev = scaledX;
@@ -392,7 +392,7 @@ public class NumberReader {
             }
         }
         currentCell /= occurrence;
-        scaledImg[scaledY][scaledX] = currentCell;
+        scaledImg[yPrev+(HEIGHT-img.getHeight())/2][xPrev+(WIDTH-img.getWidth())/2] = currentCell;
         
         return scaledImg;
     }
