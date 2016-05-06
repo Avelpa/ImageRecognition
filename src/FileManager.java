@@ -56,7 +56,8 @@ public class FileManager {
         }
         return numFiles;
     }
-
+    
+    // need to explore getabsolute file and getabsolutefilepath a bit more
     public static void duplicateFile(String oldfile, String newfile) {
         try {
             Files.copy((new File(oldfile)).toPath(), new File(getAbsoluteFilePath(newfile)).toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -75,7 +76,7 @@ public class FileManager {
     }
     
     public static void saveImage(BufferedImage img, String filepath){
-        File outputfile = new File(getAbsoluteFilePath(filepath));
+        File outputfile = new File(filepath).getAbsoluteFile();
         try {
             ImageIO.write(img, "png", outputfile);
         } catch (IOException ex) {

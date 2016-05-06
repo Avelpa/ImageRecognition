@@ -22,7 +22,8 @@ public class OpenImagesFolder {
      */
     public static void main(String[] args) {
         try {
-            Desktop.getDesktop().open(new File("c:/users/dmitry/documents/netbeansprojects/imagerecognition/images/"));
+            File imgsFolder = new File("images/").getAbsoluteFile();
+            Desktop.getDesktop().open(imgsFolder);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
