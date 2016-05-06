@@ -22,7 +22,7 @@ public class NumberReader {
     private HashMap<String, BufferedImage> examples;
     private final String examplesPath;
     
-    private final int WIDTH = 50, HEIGHT = 50;
+    private final int WIDTH = 10, HEIGHT = 10;
     
     public NumberReader(String examplesPath)
     {
@@ -57,8 +57,10 @@ public class NumberReader {
      */
     private Symbol getSymbol(BufferedImage img){
         
-        HashMap<String, Double> probabilities = new HashMap();
+        System.out.println("getting symbol...");
         
+        HashMap<String, Double> probabilities = new HashMap();
+
         // loop through all possible symbols
         for (String symbol: examples.keySet()){
             // best match for current example symbol
@@ -71,6 +73,7 @@ public class NumberReader {
     // takes an image and returns all of the parsed symbols from it
     public Symbol[] getSymbols(BufferedImage img)
     {
+        System.out.println("getting symbols...");
         BufferedImage[] splitImg = splitImage(img);
         
         Symbol[] symbols = new Symbol[splitImg.length];
@@ -84,6 +87,7 @@ public class NumberReader {
     
     public double analyze(BufferedImage example, BufferedImage test){
         
+        System.out.println("analyzing image...");
         if (test.getWidth() < WIDTH && test.getHeight() < HEIGHT)
         {
             System.out.println("ERROR image too small");
@@ -381,8 +385,10 @@ public class NumberReader {
                 scaledX = (int)(x*scaleWidth);
                 scaledY = (int)(y*scaleHeight);
                 
+                System.out.print("(" + scaledX + "," + scaledY + "," + occurrence + ")");
+                
                 if (xPrev != scaledX || yPrev != scaledY){
-                    System.out.println("ccell: " + currentCell + " occ: " + occurrence);
+//                    System.out.println("ccell: " + currentCell + " occ: " + occurrence);
                     currentCell /= occurrence;
                     int adjY = yPrev, adjX = xPrev;
                     if (img.getHeight() < HEIGHT)
@@ -399,9 +405,15 @@ public class NumberReader {
                 if (img.getRGB(x, y) == Color.BLACK.getRGB())
                     currentCell ++;
             }
+            System.out.println();
         }
         currentCell /= occurrence;
-        scaledImg[yPrev+(HEIGHT-img.getHeight())/2][xPrev+(WIDTH-img.getWidth())/2] = currentCell;
+        int adjY = yPrev, adjX = xPrev;
+        if (img.getHeight() < HEIGHT)
+            adjY = (HEIGHT-img.getHeight())/2;
+        if (img.getWidth() < WIDTH)
+            adjX = (WIDTH-img.getWidth())/2;
+        scaledImg[adjY][adjX] = currentCell;
         
         return scaledImg;
     }
