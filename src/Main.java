@@ -19,10 +19,10 @@ public class Main {
      */
     public static void main(String[] args)
     {
-        NumberReader reader = new NumberReader("c:/users/dmitry/desktop/images/main-color/");
+        NumberReader reader = new NumberReader("images/main-color/");
         reader.init();
         
-        BufferedImage testImg = FileManager.loadImage("c:/users/dmitry/desktop/images/tests/test.png");
+        BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
         testImg = Bounds.cropImage(testImg);
         Symbol[] symbols = reader.getSymbols(testImg);
         

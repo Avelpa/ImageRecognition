@@ -110,8 +110,12 @@ public class NumberReader {
         {
             for (int x = 0; x < testScaled[0].length; x ++)
             {
-                System.out.print(testScaled[y][x]);
+                if (testScaled[y][x] == 0)
+                    System.out.print("_._");
+                else
+                    System.out.print(testScaled[y][x]);
             }
+            System.out.println();
         }
         System.out.println();
         return 0d;
@@ -372,15 +376,20 @@ public class NumberReader {
         int occurrence = 0;
         
         double currentCell = 0;
-        
         for (int y = 0; y < img.getHeight(); y ++){
             for (int x = 0; x < img.getWidth(); x ++){
                 scaledX = (int)(x*scaleWidth);
                 scaledY = (int)(y*scaleHeight);
                 
                 if (xPrev != scaledX || yPrev != scaledY){
+                    System.out.println("ccell: " + currentCell + " occ: " + occurrence);
                     currentCell /= occurrence;
-                    scaledImg[yPrev+(HEIGHT-img.getHeight())/2][xPrev+(WIDTH-img.getWidth())/2] = currentCell;
+                    int adjY = yPrev, adjX = xPrev;
+                    if (img.getHeight() < HEIGHT)
+                        adjY = (HEIGHT-img.getHeight())/2;
+                    if (img.getWidth() < WIDTH)
+                        adjX = (WIDTH-img.getWidth())/2;
+                    scaledImg[adjY][adjX] = currentCell;
                     currentCell = 0;
                     occurrence = 0;
                     xPrev = scaledX;
