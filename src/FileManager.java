@@ -83,4 +83,9 @@ public class FileManager {
             Logger.getLogger(FileManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    static boolean fileExists(String path) {
+        File f = new File(path);
+        return f.exists();
+    }
 }

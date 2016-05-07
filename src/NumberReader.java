@@ -1,11 +1,14 @@
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,7 +25,7 @@ public class NumberReader {
     private HashMap<String, BufferedImage> examples;
     private final String examplesPath;
     
-    private final int WIDTH = 10, HEIGHT = 10;
+    private final int WIDTH = 50, HEIGHT = 50;
     
     public NumberReader(String examplesPath)
     {
@@ -55,9 +58,14 @@ public class NumberReader {
      * @param img image to be tested
      * @return a collection of all the possibilities with a percentage confidence for each possibility
      */
-    private Symbol getSymbol(BufferedImage img){
+    private Symbol getSymbol(BufferedImage img) throws Exception{
         
         System.out.println("getting symbol...");
+        
+        if (img.getWidth() < WIDTH && img.getHeight() < HEIGHT)
+        {
+            throw new Exception("ERROR image too small");
+        }
         
         HashMap<String, Double> probabilities = new HashMap();
 
@@ -71,7 +79,7 @@ public class NumberReader {
     }
     
     // takes an image and returns all of the parsed symbols from it
-    public Symbol[] getSymbols(BufferedImage img)
+    public Symbol[] getSymbols(BufferedImage img) throws Exception
     {
         System.out.println("getting symbols...");
         BufferedImage[] splitImg = splitImage(img);
@@ -86,14 +94,8 @@ public class NumberReader {
     
     
     public double analyze(BufferedImage example, BufferedImage test){
-        
+
         System.out.println("analyzing image...");
-        if (test.getWidth() < WIDTH && test.getHeight() < HEIGHT)
-        {
-            System.out.println("ERROR image too small");
-            return 0;
-        }
-        
         // get size intersect
         int smallestWidth = getMin(WIDTH, test.getWidth());
         int smallestHeight = getMin(HEIGHT, test.getHeight());
@@ -101,7 +103,18 @@ public class NumberReader {
         // scale each image to the intersect
         
         //double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
-        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
+//        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
+        double[][] testScaled = smallen(test, smallestWidth, smallestHeight);
+        
+        double score = 0;
+        for (int y = 0; y < testScaled.length; y ++){
+            for (int x = 0; x < testScaled[y].length; x ++){
+                score += analyzePixel(example, testScaled, x, y);
+            }
+        }
+        score /= WIDTH*HEIGHT;
+        
+        
        /* 
         double score = 0;
         //double penalty = 0d;
@@ -110,19 +123,55 @@ public class NumberReader {
                 score += analyzePixel(example, testScaled, x, y);
             }
         }*/
-        for (int y = 0; y < testScaled.length; y ++)
+//        for (int y = 0; y < testScaled.length; y ++)
+//        {
+//            for (int x = 0; x < testScaled[0].length; x ++)
+//            {
+//                if (testScaled[y][x] == 0)
+//                    System.out.print("_._");
+//                else
+//                    System.out.print(testScaled[y][x]);
+//            }
+//            System.out.println();
+//        }
+//        System.out.println();
+        return score;
+    }
+    
+    public double analyzePixel(BufferedImage example, double[][] test, int x, int y)
+    {
+        int rgb = example.getRGB(x, y);
+        double shade = (rgb >> 16) & 0x000000FF;
+        shade /= 255;
+//        int count1 = (rgb >> 8 ) & 0x000000FF;
+//        int count2 = (rgb) & 0x000000FF;
+
+        double percentDiff = 1-Math.abs((test[y][x]-shade)/255);
+        return percentDiff;
+    }
+    
+    ///////////////////////////////// buggy ///////////////////////////
+    public double[][] smallen(BufferedImage img, int width, int height)
+    {
+        double[][] scaled = new double[height][width];
+        double widthFactor = img.getWidth()/(double)width;
+        double heightFactor = img.getHeight()/(double)height;
+        
+        for (double i = 0; i < img.getHeight(); i += heightFactor)
         {
-            for (int x = 0; x < testScaled[0].length; x ++)
+            for (double j = 0; j < img.getWidth(); j += widthFactor)
             {
-                if (testScaled[y][x] == 0)
-                    System.out.print("_._");
-                else
-                    System.out.print(testScaled[y][x]);
+                for (int y = (int)i; y < img.getHeight() && y < i+heightFactor; y ++)
+                {
+                    for (int x = (int)j; x < img.getWidth() && x < j+widthFactor; x ++)
+                    {
+                        scaled[(int)(y/heightFactor)][(int)(x/widthFactor)] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
+                    }
+                }
             }
-            System.out.println();
         }
-        System.out.println();
-        return 0d;
+        
+        return scaled;
     }
     
     private int getMin(int num1, int num2){
@@ -130,7 +179,7 @@ public class NumberReader {
             return num1;
         return num2;
     }
-    
+    /*
     public double analyzePixel(double[][] example, double[][] test, int x, int y){
         int offset = 0;
         double penalty = 0;
@@ -203,7 +252,7 @@ public class NumberReader {
             offset ++;
         }
         return penalty;
-    }
+    }*/
     
     public void remember(Symbol[] symbols, boolean brief)
     {
@@ -233,9 +282,76 @@ public class NumberReader {
         }
         
         FileManager.assertFolderExists(examplesPath + realName);
-        int newIndex = FileManager.countFiles(examplesPath + realName);
+        if (!FileManager.fileExists(examplesPath + realName + "/" + realName + ".png")){
+            createBlankExample(examplesPath + realName + "/" + realName + ".png");
+        } 
+        BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
         
-        FileManager.saveImage(sym.getImage(), examplesPath + realName + "/" + realName + "_" + newIndex + ".png");
+        BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(), WIDTH, HEIGHT), example);
+        
+        FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
+//        int newIndex = FileManager.countFiles(examplesPath + realName);
+//        
+//        FileManager.saveImage(sym.getImage(), examplesPath + realName + "/" + realName + "_" + newIndex + ".png");
+    }
+    
+    private void createBlankExample(String filepath)
+    {
+        BufferedImage newImg = new BufferedImage ( WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB );
+        Graphics2D g = newImg.createGraphics();
+        g.setColor( new Color ( 0, 0, 0, 0 ));
+        g.fillRect(0, 0, WIDTH, HEIGHT);
+        g.dispose();
+        
+        FileManager.saveImage(newImg, filepath);
+    }
+    
+    private BufferedImage createImage(double[][] imageArray)
+    {
+        BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_BGR);
+        int[] data = new int[WIDTH*HEIGHT];
+        
+        for (int y = 0; y < WIDTH; y ++)
+        {
+            for (int x = 0; x < HEIGHT; x ++)
+            {
+                data[y*WIDTH+x] = (int)(imageArray[y][x]*255);
+            }
+        }
+//        int i = 0;
+//        for (int y = 0; y < 100; y ++)
+//        {
+//            for (int x = 0; x < 100; x ++)
+//            {
+//                if ((x+y)%2 == 0)
+//                    data[i] = Color.BLACK.getRGB();
+//                else
+//                    data[i] = Color.WHITE.getRGB();
+//                i ++;
+//            }
+//        }
+//        
+        img.setRGB(0, 0, WIDTH, HEIGHT, data, 0, WIDTH);
+//        
+        return img;
+    }
+    
+    private BufferedImage modifyExample(double[][] newImg, BufferedImage example)
+    {
+        for (int y = 0; y < newImg.length; y ++)
+        {
+            for (int x = 0; x < newImg[y].length; x ++)
+            {
+                int rgb = example.getRGB(x, y);
+                double shade = (rgb >> 16) & 0x000000FF;
+                shade /= 255;
+        //        int count1 = (rgb >> 8 ) & 0x000000FF;
+        //        int count2 = (rgb) & 0x000000FF;
+            }
+        }
+        
+        BufferedImage modifiedExample = createImage(newImg);
+        return modifiedExample;
     }
     
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
@@ -367,7 +483,8 @@ public class NumberReader {
         }
         return imgs;
     }
-    
+    /*
+     ///////////////////// even buggier than smallen ////////////////////////////////
     public double[][] scaleImage(BufferedImage img, int width, int height){
         
         double[][] scaledImg = new double[WIDTH][HEIGHT];
@@ -416,5 +533,5 @@ public class NumberReader {
         scaledImg[adjY][adjX] = currentCell;
         
         return scaledImg;
-    }
+    }*/
 }
