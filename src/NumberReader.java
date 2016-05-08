@@ -27,6 +27,8 @@ public class NumberReader {
     
     private final int WIDTH = 50, HEIGHT = 50;
     
+    private double[][] scaled = new double[HEIGHT][WIDTH];
+    
     public NumberReader(String examplesPath)
     {
         this.examplesPath = examplesPath;
@@ -67,6 +69,8 @@ public class NumberReader {
             throw new Exception("ERROR image too small");
         }
         
+        scaled = smallen(img, WIDTH, HEIGHT);
+        
         HashMap<String, Double> probabilities = new HashMap();
 
         // loop through all possible symbols
@@ -97,19 +101,18 @@ public class NumberReader {
 
         System.out.println("analyzing image...");
         // get size intersect
-        int smallestWidth = getMin(WIDTH, test.getWidth());
-        int smallestHeight = getMin(HEIGHT, test.getHeight());
+//        int smallestWidth = getMin(WIDTH, test.getWidth());
+//        int smallestHeight = getMin(HEIGHT, test.getHeight());
         
         // scale each image to the intersect
         
         //double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
 //        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
-        double[][] testScaled = smallen(test, smallestWidth, smallestHeight);
         
         double score = 0;
-        for (int y = 0; y < testScaled.length; y ++){
-            for (int x = 0; x < testScaled[y].length; x ++){
-                score += analyzePixel(example, testScaled, x, y);
+        for (int y = 0; y < scaled.length; y ++){
+            for (int x = 0; x < scaled[y].length; x ++){
+                score += analyzePixel(example, scaled, x, y);
             }
         }
         score /= WIDTH*HEIGHT;
@@ -142,20 +145,23 @@ public class NumberReader {
     {
         int rgb = example.getRGB(x, y);
         double shade = (rgb >> 16) & 0x000000FF;
-        shade /= 255;
+        
+        double testShade = scaled[y][x]*255;
 //        int count1 = (rgb >> 8 ) & 0x000000FF;
 //        int count2 = (rgb) & 0x000000FF;
-
-        double percentDiff = 1-Math.abs((test[y][x]-shade)/255);
+        
+        double percentDiff = 1-Math.abs((testShade-shade)/255);
         return percentDiff;
     }
     
     ///////////////////////////////// buggy ///////////////////////////
     public double[][] smallen(BufferedImage img, int width, int height)
     {
+        System.out.println("starting smallening");
         double[][] scaled = new double[height][width];
-        double widthFactor = img.getWidth()/(double)width;
-        double heightFactor = img.getHeight()/(double)height;
+        double widthFactor = img.getWidth() >= width ? img.getWidth()/(double)width : 1d;
+        double heightFactor = img.getHeight() >= height ? img.getHeight()/(double)height : 1d;
+        
         
         for (double i = 0; i < img.getHeight(); i += heightFactor)
         {
@@ -165,11 +171,35 @@ public class NumberReader {
                 {
                     for (int x = (int)j; x < img.getWidth() && x < j+widthFactor; x ++)
                     {
-                        scaled[(int)(y/heightFactor)][(int)(x/widthFactor)] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
+                        int scaledY = y, scaledX = x;
+                        if (img.getHeight() < height)
+                            scaledY += (height-img.getHeight())/2;
+                        else
+                            scaledY /= heightFactor;
+                        if (img.getWidth() < width)
+                            scaledX += (width-img.getWidth())/2;
+                        else
+                            scaledX /= widthFactor;
+                        
+                        scaled[scaledY][scaledX] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
                     }
                 }
             }
         }
+        
+        System.out.println("done smallening");
+        
+//        for (int y = 0; y < scaled.length; y ++)
+//        {
+//            for (int x = 0; x < scaled[y].length; x ++)
+//            {
+//                if (scaled[y][x] == 0)
+//                    System.out.print("_._");
+//                else
+//                    System.out.print(scaled[y][x]);
+//            }
+//            System.out.println();
+//        }
         
         return scaled;
     }
@@ -287,7 +317,7 @@ public class NumberReader {
         } 
         BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
         
-        BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(), WIDTH, HEIGHT), example);
+        BufferedImage modifiedExample = modifyExample(scaled, example);
         
         FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
 //        int newIndex = FileManager.countFiles(examplesPath + realName);
@@ -315,7 +345,7 @@ public class NumberReader {
         {
             for (int x = 0; x < HEIGHT; x ++)
             {
-                data[y*WIDTH+x] = (int)(imageArray[y][x]*255);
+                data[y*WIDTH+x] = (int)(imageArray[y][x]);
             }
         }
 //        int i = 0;
@@ -344,9 +374,24 @@ public class NumberReader {
             {
                 int rgb = example.getRGB(x, y);
                 double shade = (rgb >> 16) & 0x000000FF;
-                shade /= 255;
-        //        int count1 = (rgb >> 8 ) & 0x000000FF;
-        //        int count2 = (rgb) & 0x000000FF;
+                
+                int count1 = (rgb >> 8 ) & 0x000000FF;
+                int count2 = (rgb) & 0x000000FF;
+                
+                int count = count1 + count2;
+                
+                int r, g, b;
+                
+                r = (int)((shade*count)/(count+1) + newImg[y][x]*255/(count+1));
+                if (count2 == 255)
+                    count1 ++;
+                else
+                    count2 ++;
+                
+                g = count1;
+                b = count2;
+                
+                newImg[y][x] = (r << 16 | g << 8 | b);
             }
         }
         

@@ -27,6 +27,7 @@ public class Main {
         
         learn(symbols, reader);
         
+        
 //        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_BGR);
 //        int[] data = new int[10000];
 //        int i = 0;
