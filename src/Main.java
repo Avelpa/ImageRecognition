@@ -25,7 +25,8 @@ public class Main {
         testImg = Bounds.cropImage(testImg);
         Symbol[] symbols = reader.getSymbols(testImg);
         
-        learn(symbols, reader);
+//        learn(symbols, reader);
+        bulkLearn(symbols, reader, "1");
         
         
 //        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_BGR);
@@ -90,5 +91,11 @@ public class Main {
             printSyms(symbols);
             reader.remember(symbols, false);
         }
+    }
+
+    private static void bulkLearn(Symbol[] symbols, NumberReader reader, String realName) {
+        printSyms(symbols);
+        
+        reader.bulkRemember(symbols, realName);
     }
 }
