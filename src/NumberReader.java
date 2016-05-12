@@ -197,32 +197,27 @@ public class NumberReader {
         return penalty;
     }
     
-    public void remember(Symbol[] symbols, boolean brief)
+    public void remember(Symbol[] symbols)
     {
         for (Symbol sym: symbols){
-            remember(sym, brief);
+            remember(sym);
         }
     }
     
-    private void remember(Symbol sym, boolean brief)
+    private void remember(Symbol sym)
     {
-//        sym.printProbs();
+    sym.printProbs();
         if (sym.getProb() == 1)
         {   
-            if (!brief)
-                System.out.println("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with 100% confidence");
+            System.out.println("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with 100% confidence");
             return;
         }
         
         String realName;
         
-        if (!brief){
-            System.out.print("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with " + sym.getProb()*100 + " confidence.\nReal symbol >> ");
-            Scanner in = new Scanner(System.in);
-            realName = in.next();
-        } else {
-            realName = sym.getName();
-        }
+        System.out.print("Guessed: " + sym.getName() + "(" + sym.getDisplayString() + ") with " + sym.getProb()*100 + " confidence.\nReal symbol >> ");
+        Scanner in = new Scanner(System.in);
+        realName = in.next();
         
         FileManager.assertFolderExists(examplesPath + realName);
         int newIndex = FileManager.countFiles(examplesPath + realName);
@@ -359,7 +354,7 @@ public class NumberReader {
         }
         return imgs;
     }
-    /*
+    
     public double[][] scaleImage(BufferedImage img, int width, int height){
         
         double[][] scaledImg = new double[height][width];
@@ -395,39 +390,41 @@ public class NumberReader {
         scaledImg[scaledY][scaledX] = currentCell;
         
         return scaledImg;
-    }*/
+    }
     ///////////////////////////////// buggy smallen ///////////////////////////
-    public double[][] scaleImage(BufferedImage img, int width, int height)
-    {
-        double[][] scaled = new double[height][width];
-        double widthFactor = img.getWidth() >= width ? img.getWidth()/(double)width : 1d;
-        double heightFactor = img.getHeight() >= height ? img.getHeight()/(double)height : 1d;
-        
-        
-        for (double i = 0; i < img.getHeight(); i += heightFactor)
-        {
-            for (double j = 0; j < img.getWidth(); j += widthFactor)
-            {
-                for (int y = (int)i; y < img.getHeight() && y < i+heightFactor; y ++)
-                {
-                    for (int x = (int)j; x < img.getWidth() && x < j+widthFactor; x ++)
-                    {
-                        int scaledY = y, scaledX = x;
-                        if (img.getHeight() < height)
-                            scaledY += (height-img.getHeight())/2;
-                        else
-                            scaledY /= heightFactor;
-                        if (img.getWidth() < width)
-                            scaledX += (width-img.getWidth())/2;
-                        else
-                            scaledX /= widthFactor;
-                        
-                        scaled[scaledY][scaledX] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
-                    }
-                }
-            }
-        }
-        
+//    public double[][] scaleImage(BufferedImage img, int width, int height)
+//    {
+//        double[][] scaled = new double[height][width];
+//        double widthFactor = img.getWidth() >= width ? img.getWidth()/(double)width : 1d;
+//        double heightFactor = img.getHeight() >= height ? img.getHeight()/(double)height : 1d;
+//        
+//        
+//        System.out.println("wf: " +widthFactor);
+//        
+//        for (double i = 0; i < img.getHeight(); i += heightFactor)
+//        {
+//            for (double j = 0; j < img.getWidth(); j += widthFactor)
+//            {
+//                for (int y = (int)i; y < img.getHeight() && y < i+heightFactor; y ++)
+//                {
+//                    for (int x = (int)j; x < img.getWidth() && x < j+widthFactor; x ++)
+//                    {
+//                        int scaledY = y, scaledX = x;
+//                        if (img.getHeight() < height)
+//                            scaledY += (height-img.getHeight())/2;
+//                        else
+//                            scaledY /= heightFactor;
+//                        if (img.getWidth() < width)
+//                            scaledX += (width-img.getWidth())/2;
+//                        else
+//                            scaledX /= widthFactor;
+//                        
+//                        scaled[scaledY][scaledX] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
+//                    }
+//                }
+//            }
+//        }
+//        
 //        for (int y = 0; y < scaled.length; y ++)
 //        {
 //            for (int x = 0; x < scaled[y].length; x ++)
@@ -439,25 +436,20 @@ public class NumberReader {
 //            }
 //            System.out.println();
 //        }
-        
-        return scaled;
-    }
+//        
+//        return scaled;
+//    }
     
     void bulkRemember(Symbol[] symbols, String realName) {
         
         for (Symbol sym: symbols)
         {
             FileManager.assertFolderExists(examplesPath + realName);
-            if (!FileManager.fileExists(examplesPath + realName + "/" + realName + ".png")){
-                createBlankExample(examplesPath + realName + "/" + realName + ".png");
-            } 
-            BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
+            int newIndex = FileManager.countFiles(examplesPath + realName);
 
-            BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),WIDTH,HEIGHT), example);
-
-            FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
+            FileManager.saveImage(sym.getImage(), examplesPath + realName + "/" + realName + "_" + newIndex + ".png");
             
-            this.init();
+            newIndex ++;
         }
     }
     

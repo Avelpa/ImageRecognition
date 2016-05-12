@@ -19,14 +19,14 @@ public class Main {
      */
     public static void main(String[] args)
     {
-        NumberReader reader = new NumberReader("images/math/");
+        NumberReader reader = new NumberReader("images/new/");
         reader.init();
         
         BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
         testImg = Bounds.cropImage(testImg);
         Symbol[] symbols = reader.getSymbols(testImg);
         
-        doMath(symbols, reader);
+        learn(symbols, reader);
         
 //        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_BGR);
 //        int[] data = new int[10000];
@@ -66,7 +66,7 @@ public class Main {
     {
         printSyms(symbols);
         
-        reader.remember(symbols, false);
+        reader.remember(symbols);
     }
     
     private static void doMath(Symbol[] symbols, NumberReader reader)
@@ -82,13 +82,13 @@ public class Main {
             System.out.print("right?\n>> ");
             Scanner in = new Scanner(System.in);
             if (in.next().startsWith("n"))
-                reader.remember(symbols, false);
+                reader.remember(symbols);
             else
-                reader.remember(symbols, true);
+                reader.remember(symbols);
         } catch (Exception e) {
             System.out.println("INVALID EXPRESSION");
             printSyms(symbols);
-            reader.remember(symbols, false);
+            reader.remember(symbols);
         }
     }
 }
