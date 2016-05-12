@@ -442,4 +442,23 @@ public class NumberReader {
         
         return scaled;
     }
+    
+    void bulkRemember(Symbol[] symbols, String realName) {
+        
+        for (Symbol sym: symbols)
+        {
+            FileManager.assertFolderExists(examplesPath + realName);
+            if (!FileManager.fileExists(examplesPath + realName + "/" + realName + ".png")){
+                createBlankExample(examplesPath + realName + "/" + realName + ".png");
+            } 
+            BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
+
+            BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),WIDTH,HEIGHT), example);
+
+            FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
+            
+            this.init();
+        }
+    }
+    
 }
