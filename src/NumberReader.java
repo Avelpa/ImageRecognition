@@ -359,7 +359,7 @@ public class NumberReader {
         }
         return imgs;
     }
-    
+    /*
     public double[][] scaleImage(BufferedImage img, int width, int height){
         
         double[][] scaledImg = new double[height][width];
@@ -395,5 +395,51 @@ public class NumberReader {
         scaledImg[scaledY][scaledX] = currentCell;
         
         return scaledImg;
+    }*/
+    ///////////////////////////////// buggy smallen ///////////////////////////
+    public double[][] scaleImage(BufferedImage img, int width, int height)
+    {
+        double[][] scaled = new double[height][width];
+        double widthFactor = img.getWidth() >= width ? img.getWidth()/(double)width : 1d;
+        double heightFactor = img.getHeight() >= height ? img.getHeight()/(double)height : 1d;
+        
+        
+        for (double i = 0; i < img.getHeight(); i += heightFactor)
+        {
+            for (double j = 0; j < img.getWidth(); j += widthFactor)
+            {
+                for (int y = (int)i; y < img.getHeight() && y < i+heightFactor; y ++)
+                {
+                    for (int x = (int)j; x < img.getWidth() && x < j+widthFactor; x ++)
+                    {
+                        int scaledY = y, scaledX = x;
+                        if (img.getHeight() < height)
+                            scaledY += (height-img.getHeight())/2;
+                        else
+                            scaledY /= heightFactor;
+                        if (img.getWidth() < width)
+                            scaledX += (width-img.getWidth())/2;
+                        else
+                            scaledX /= widthFactor;
+                        
+                        scaled[scaledY][scaledX] += (img.getRGB(x,y)==Color.BLACK.getRGB() ? 1: 0)/(widthFactor*heightFactor);
+                    }
+                }
+            }
+        }
+        
+//        for (int y = 0; y < scaled.length; y ++)
+//        {
+//            for (int x = 0; x < scaled[y].length; x ++)
+//            {
+//                if (scaled[y][x] == 0)
+//                    System.out.print("_._");
+//                else
+//                    System.out.print(scaled[y][x]);
+//            }
+//            System.out.println();
+//        }
+        
+        return scaled;
     }
 }
