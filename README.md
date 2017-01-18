@@ -18,7 +18,7 @@
 
    **1.** If a symbol is recognized with 100% accuracy, a prompt to confirm its identity will not show up. Otherwise, the symbol's real *symbol_identity* must be inserted. Here is a list of the important symbol identities in the *symbol_identity(symbol_display_string)* format:
      - *div(/)*
-     - *x(\*)*
+     - *x(\\*)*
      - *gt(>)*
      - *lt(<)*
     
