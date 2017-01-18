@@ -18,15 +18,15 @@ public class Main {
      */
     public static void main(String[] args) throws Exception
     {
-        NumberReader reader = new NumberReader("images/main-color/");
+        NumberReader reader = new NumberReader("images/current/");
         reader.init();
         
-        BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
+        BufferedImage testImg = FileManager.loadImage("images/newthing.png");
         testImg = Bounds.cropImage(testImg);
         Symbol[] symbols = reader.getSymbols(testImg);
         
-//        learn(symbols, reader);
-        bulkLearn(symbols, reader, "1");
+        learn(symbols, reader);
+//        bulkLearn(symbols, reader, "1");
         
         
 //        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_BGR);

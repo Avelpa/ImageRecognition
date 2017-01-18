@@ -25,16 +25,16 @@ public class NumberReader {
     private HashMap<String, BufferedImage> examples;
     private final String examplesPath;
     
-    private final int WIDTH = 50, HEIGHT = 50;
+    private final int MIN_IMAGE_WIDTH = 50, MIN_IMAGE_HEIGHT = 50;
     
     public NumberReader(String examplesPath)
     {
         this.examplesPath = examplesPath;
     }
     
-//    /**
-//     * Loads all of the examples.
-//     */
+    /**
+     * Loads all of the examples.
+     */
     public void init(){
         examples = new HashMap();
         
@@ -60,7 +60,7 @@ public class NumberReader {
      */
     private Symbol getSymbol(BufferedImage img) throws Exception{
         
-        if (img.getWidth() < WIDTH && img.getHeight() < HEIGHT)
+        if (img.getWidth() < MIN_IMAGE_WIDTH && img.getHeight() < MIN_IMAGE_HEIGHT)
         {
             throw new Exception("ERROR image too small");
         }
@@ -101,7 +101,7 @@ public class NumberReader {
         //double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
 //        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
         
-        double[][] scaled = smallen(test, WIDTH, HEIGHT);
+        double[][] scaled = smallen(test, MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT);
         
         double score = 0;
         for (int y = 0; y < scaled.length; y ++){
@@ -109,7 +109,7 @@ public class NumberReader {
                 score += analyzePixel(example, scaled, x, y);
             }
         }
-        score /= WIDTH*HEIGHT;
+        score /= MIN_IMAGE_WIDTH*MIN_IMAGE_HEIGHT;
         
         
        /* 
@@ -310,7 +310,7 @@ public class NumberReader {
         } 
         BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
         
-        BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),WIDTH,HEIGHT), example);
+        BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),MIN_IMAGE_WIDTH,MIN_IMAGE_HEIGHT), example);
         
         FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
 //        int newIndex = FileManager.countFiles(examplesPath + realName);
@@ -322,10 +322,10 @@ public class NumberReader {
     
     private void createBlankExample(String filepath)
     {
-        BufferedImage newImg = new BufferedImage ( WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB );
+        BufferedImage newImg = new BufferedImage ( MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB );
         Graphics2D g = newImg.createGraphics();
         g.setColor( new Color ( 0, 0, 0, 0 ));
-        g.fillRect(0, 0, WIDTH, HEIGHT);
+        g.fillRect(0, 0, MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT);
         g.dispose();
         
         FileManager.saveImage(newImg, filepath);
@@ -333,14 +333,14 @@ public class NumberReader {
     
     private BufferedImage createImage(double[][] imageArray)
     {
-        BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_BGR);
-        int[] data = new int[WIDTH*HEIGHT];
+        BufferedImage img = new BufferedImage(MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT, BufferedImage.TYPE_INT_BGR);
+        int[] data = new int[MIN_IMAGE_WIDTH*MIN_IMAGE_HEIGHT];
         
-        for (int y = 0; y < WIDTH; y ++)
+        for (int y = 0; y < MIN_IMAGE_WIDTH; y ++)
         {
-            for (int x = 0; x < HEIGHT; x ++)
+            for (int x = 0; x < MIN_IMAGE_HEIGHT; x ++)
             {
-                data[y*WIDTH+x] = (int)(imageArray[y][x]);
+                data[y*MIN_IMAGE_WIDTH+x] = (int)(imageArray[y][x]);
             }
         }
 //        int i = 0;
@@ -356,7 +356,7 @@ public class NumberReader {
 //            }
 //        }
 //        
-        img.setRGB(0, 0, WIDTH, HEIGHT, data, 0, WIDTH);
+        img.setRGB(0, 0, MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT, data, 0, MIN_IMAGE_WIDTH);
 //        
         return img;
     }
@@ -414,27 +414,31 @@ public class NumberReader {
         BufferedImage modifiedExample = createImage(newImg);
         return modifiedExample;
     }
+
+    /*
     
+    */
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
         ArrayList<Integer> breakPoints = new ArrayList();
         breakPoints.add(0);
         
-        boolean parsing = false;
+        boolean blackHasOccurred = false;
         for (int x = 0; x < img.getWidth(); x ++){
-            boolean allWhite = true;
+            boolean columnIsWhite = true;
             for (int y = 0; y < img.getHeight(); y ++){
                 if (img.getRGB(x, y) != Color.WHITE.getRGB())
                 {
-                    parsing = true;
-                    allWhite = false;
+                    blackHasOccurred = true;
+                    columnIsWhite = false;
                 }
             }
-                    
-            if (allWhite && parsing){
-                parsing = false;
+            
+            if (columnIsWhite && blackHasOccurred){
+                blackHasOccurred = false;
                 breakPoints.add(x);
             }
         }
+        // try setting columnIsWhite to false in the above if statement and instead check below if it has been set -- if no, only then add image.getwidth
         breakPoints.add(img.getWidth());
         
         return breakPoints;
@@ -527,7 +531,7 @@ public class NumberReader {
     }
     
     /**
-     * Splits an image horizontally into  cropped sub-images
+     * Splits an image by making vertical slices into  cropped sub-images
      * @param img
      * @return 
      */
@@ -539,8 +543,7 @@ public class NumberReader {
         BufferedImage[] imgs = new BufferedImage[bps.size()-1];
         
         for (int i = 1; i < bps.size(); i ++){
-            imgs[i-1] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
-            imgs[i-1] = Bounds.cropImage(imgs[i-1]);
+            imgs[i-1] = Bounds.cropImage(img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight()));
         }
         return imgs;
     }
@@ -606,7 +609,7 @@ public class NumberReader {
             } 
             BufferedImage example = FileManager.loadImage(examplesPath + realName + "/" + realName + ".png");
 
-            BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),WIDTH,HEIGHT), example);
+            BufferedImage modifiedExample = modifyExample(smallen(sym.getImage(),MIN_IMAGE_WIDTH,MIN_IMAGE_HEIGHT), example);
 
             FileManager.saveImage(modifiedExample, examplesPath + realName + "/" + realName + ".png");
             
