@@ -21,7 +21,7 @@ public class Main {
     {
         NumberReader reader = new NumberReader("images/math/");
 //        
-        BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
+        BufferedImage testImg = FileManager.loadImage("images/tests/emptyTest.png");
         testImg = Bounds.cropImage(testImg);
         if (testImg == null) {
             System.err.println("Error: Image must contain at least one non-white pixel");
@@ -71,7 +71,7 @@ public class Main {
     {
         printSyms(symbols);
         
-        reader.remember(symbols, false);
+        reader.remember(symbols);
     }
     
     private static void doMath(Symbol[] symbols, NumberReader reader)
@@ -87,13 +87,13 @@ public class Main {
             System.out.print("right?\n>> ");
             Scanner in = new Scanner(System.in);
             if (in.next().startsWith("n"))
-                reader.remember(symbols, false);
+                reader.remember(symbols);
             else
-                reader.remember(symbols, true);
+                reader.remember(symbols);
         } catch (Exception e) {
             System.out.println("INVALID EXPRESSION");
             printSyms(symbols);
-            reader.remember(symbols, false);
+            reader.remember(symbols);
         }
     }
 }
