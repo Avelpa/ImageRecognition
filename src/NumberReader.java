@@ -20,21 +20,15 @@ import java.util.Stack;
 public class NumberReader {
     
     private HashMap<String, BufferedImage[]> examples;
-    private final String examplesPath;
+    private final String EXAMPLES_PATH;
     
     public NumberReader(String examplesPath)
     {
-        this.examplesPath = examplesPath;
-    }
-    
-//    /**
-//     * Loads all of the examples.
-//     */
-    public void init(){
-        examples = new HashMap();
+        this.EXAMPLES_PATH = examplesPath;
         
-        // get all of the example folders
-        File[] exampleFolders = FileManager.getFileList(examplesPath);
+        this.examples = new HashMap();
+        
+        File[] exampleFolders = FileManager.getFileList(this.EXAMPLES_PATH);
         
         // parse each folder for the actual example images
         for (File folder: exampleFolders){
@@ -51,9 +45,9 @@ public class NumberReader {
     }
     
     /**
-     * Check each example image against input
+     * Check each example image against input, and build a list of probabilities
      * @param img image to be tested
-     * @return a collection of all the possibilities with a percentage confidence for each possibility
+     * @return a Symbol object
      */
     private Symbol getSymbol(BufferedImage img){
         
@@ -62,14 +56,14 @@ public class NumberReader {
         // loop through all possible symbols
         for (String symbol: examples.keySet()){
             // best match for current example symbol
-            double maxProb = 0d;
-            // loop through all examples of current symbol
+            double maxProbability = 0d;
+            // loop through all examples of symbol
             for (BufferedImage example: examples.get(symbol)){
                 double prob = analyze(example, img);
-                if (prob > maxProb)
-                    maxProb = prob;
+                if (prob > maxProbability)
+                    maxProbability = prob;
             }
-            probabilities.put(symbol, maxProb);
+            probabilities.put(symbol, maxProbability);
         }
         return new Symbol(probabilities, img);
     }
@@ -94,16 +88,15 @@ public class NumberReader {
      */
     public double analyze(BufferedImage example, BufferedImage test){
         
-        // get size intersect
+        // get smallest shared size
         int smallestWidth = getMin(example.getWidth(), test.getWidth());
         int smallestHeight = getMin(example.getHeight(), test.getHeight());
         
-        // scale each image to the intersect
-        double[][] exampleScaled = scaleImage(example, smallestWidth, smallestHeight);
-        double[][] testScaled = scaleImage(test, smallestWidth, smallestHeight);
+        // scale each image down to the smallest shared size
+        double[][] exampleScaled = scaleImageDown(example, smallestWidth, smallestHeight);
+        double[][] testScaled = scaleImageDown(test, smallestWidth, smallestHeight);
         
         double score = smallestWidth * smallestHeight;
-        //double penalty = 0d;
         for (int y = 0; y < testScaled.length; y ++){
             for (int x = 0; x < testScaled[y].length; x ++){
                 score -= analyzePixel(exampleScaled, testScaled, x, y);
@@ -111,8 +104,8 @@ public class NumberReader {
         }
         score /= smallestWidth*smallestHeight;
         
-        if (Math.abs((test.getWidth()/testScaled[0].length)/(test.getHeight()/testScaled.length)-1) >= 0.2)
-            score *= 0.8;
+//        if (Math.abs((test.getWidth()/testScaled[0].length)/(test.getHeight()/testScaled.length)-1) >= 0.2)
+//            score *= 0.8;
         
         return score;
     }
@@ -127,71 +120,70 @@ public class NumberReader {
         int offset = 0;
         double penalty = 0;
         
-        boolean done = false;
         while (x - offset >= 0 || x + offset < example[0].length || y - offset >= 0 || y + offset < example.length){
             
+            // match white to white, and non-white to non-white (hence the Math.ceil())
+            
             // left
-            if (x-offset >= 0){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x-offset])){
+            if (x-offset >= 0) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x-offset])) {
                     penalty += Math.abs(test[y][x]-example[y][x-offset]);
-                    done = true;
+                    break;
                 }
             }
             // right
-            if (x+offset < example[0].length && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x+offset])){
+            if (x+offset < example[0].length) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y][x+offset])) {
                     penalty += Math.abs(test[y][x]-example[y][x+offset]);
-                    done = true;
+                    break;
                 }
                 
             }
             // top
-            if (y-offset >= 0 && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x])){
+            if (y-offset >= 0) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x])) {
                     penalty += Math.abs(test[y][x]-example[y-offset][x]);
-                    done = true;
+                    break;
                 }
             }
             // bottom
-            if (y+offset < example.length && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x])){
+            if (y+offset < example.length) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x])) {
                     penalty += Math.abs(test[y][x]-example[y+offset][x]);
-                    done = true;
+                    break;
                 }
             }
             // top left
-            if (x-offset >= 0 && y-offset >= 0 && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x-offset])){
+            if (x-offset >= 0 && y-offset >= 0) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x-offset])) {
                     penalty += Math.abs(test[y][x]-example[y-offset][x-offset]);
-                    done = true;
+                    break;
                 }
             }
             // top right
-            if (x+offset < example[0].length && y-offset >= 0 && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x+offset])){
+            if (x+offset < example[0].length && y-offset >= 0) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y-offset][x+offset])) {
                     penalty += Math.abs(test[y][x]-example[y-offset][x+offset]);
-                    done = true;
+                    break;
                 }
             }
             // bottom left
-            if (x-offset >= 0 && y+offset < example.length && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x-offset])){
+            if (x-offset >= 0 && y+offset < example.length) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x-offset])) {
                     penalty += Math.abs(test[y][x]-example[y+offset][x-offset]);
-                    done = true;
+                    break;
                 }
             }
             // bottom right
-            if (x+offset < example[0].length && y+offset < example.length && !done){
-                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x+offset])){
+            if (x+offset < example[0].length && y+offset < example.length) {
+                if (Math.ceil(test[y][x]) == Math.ceil(example[y+offset][x+offset])) {
                     penalty += Math.abs(test[y][x]-example[y+offset][x+offset]);
-                    done = true;
+                    break;
                 }
             }
             
-            if (done)
-                break;
-            
-            penalty ++; 
+            // failed to make a match in the surrounding square
+            penalty ++;
             offset ++;
         }
         return penalty;
@@ -224,33 +216,33 @@ public class NumberReader {
             realName = sym.getName();
         }
         
-        FileManager.assertFolderExists(examplesPath + realName);
-        int newIndex = FileManager.countFiles(examplesPath + realName);
+        FileManager.assertFolderExists(EXAMPLES_PATH + realName);
+        int newIndex = FileManager.countFiles(EXAMPLES_PATH + realName);
         
-        FileManager.saveImage(sym.getImage(), examplesPath + realName + "/" + realName + "_" + newIndex + ".png");
+        FileManager.saveImage(sym.getImage(), EXAMPLES_PATH + realName + "/" + realName + "_" + newIndex + ".png");
     }
     
     private ArrayList<Integer> getBreakPoints(BufferedImage img){
         ArrayList<Integer> breakPoints = new ArrayList();
         breakPoints.add(0);
         
-        boolean parsing = false;
+        boolean blackHasOccurred = false;
         for (int x = 0; x < img.getWidth(); x ++){
-            boolean allWhite = true;
+            boolean curColumnIsWhite = true;
             for (int y = 0; y < img.getHeight(); y ++){
                 if (img.getRGB(x, y) != Color.WHITE.getRGB())
                 {
-                    parsing = true;
-                    allWhite = false;
+                    blackHasOccurred = true;
+                    curColumnIsWhite = false;
                 }
             }
                     
-            if (allWhite && parsing){
-                parsing = false;
+            if (curColumnIsWhite && blackHasOccurred){
+                blackHasOccurred = false;
                 breakPoints.add(x);
             }
         }
-        breakPoints.add(img.getWidth());
+        breakPoints.add(img.getWidth()); // check the thing from before
         
         return breakPoints;
     }
@@ -347,53 +339,73 @@ public class NumberReader {
      * @return 
      */
     public BufferedImage[] splitImage(BufferedImage img){
-        ArrayList<Integer> bps = getBreakPoints(img);
+        ArrayList<Integer> breakPoints = getBreakPoints(img);
         
-        if (bps.isEmpty())
-            return null;
-        BufferedImage[] imgs = new BufferedImage[bps.size()-1];
+        BufferedImage[] imgs = new BufferedImage[breakPoints.size()-1];
         
-        for (int i = 1; i < bps.size(); i ++){
-            imgs[i-1] = img.getSubimage(bps.get(i-1), 0, bps.get(i)-bps.get(i-1), img.getHeight());
-            imgs[i-1] = Bounds.cropImage(imgs[i-1]);
+        for (int i = 1; i < breakPoints.size(); i ++){
+            imgs[i-1] = Bounds.cropImage(img.getSubimage(breakPoints.get(i-1), 0, breakPoints.get(i)-breakPoints.get(i-1), img.getHeight()));
         }
         return imgs;
     }
     
-    public double[][] scaleImage(BufferedImage img, int width, int height){
+    /*  scales an image down by averaging out pixel cluster colors. Fully black is a 1, fully white is a 0
+    * i.e., scaling down 3x3 to a 2x2 will give the following correspondence
+    *  consider a = b = c = d = 1
+    * |a|a|c|             The resulting scaled down cells are averages of the clusters (so if one of the a's was a white pixel
+    * |a|a|c| --> |a|c|     The corresponding 'a' cell in the 2x2 would have a value of 3/4
+    * |b|b|d|     |b|d|       
+    */
+    public double[][] scaleImageDown(BufferedImage img, int newWidth, int newHeight) {
         
-        double[][] scaledImg = new double[height][width];
-        double scaleWidth = (double)width/img.getWidth();
-        double scaleHeight = (double)height/img.getHeight();
+        // the number of black cells in the corresponding scaled image cell (in the above example, a = 4, b = c = 2, d = 1
+        double[][] scaledImgBMPBlacks = new double[newHeight][newWidth];
+        // the number of total cells in the corresponding scaled image cell (in the above example, a = 4, b = c = 2, d = 1
+        double[][] scaledImgBMPCount = new double[newHeight][newWidth];
+        // the actual scaled image where each cell is the corresponding entry from blacks divided by the corresponding entry from count
+        double[][] scaledImgBMP = new double[newHeight][newWidth];
         
-        int scaledX = 0, scaledY = 0;
+        double scaleWidthRatio = (double)newWidth/img.getWidth();
+        double scaleHeightRatio = (double)newHeight/img.getHeight();
         
-        int xPrev = scaledX, yPrev = scaledY;
         int occurrence = 0;
+        int blacks = 0;
         
-        double currentCell = 0;
-        
+        int newX = 0, newY = 0;
+        int oldX = newX, oldY = newY;
         for (int y = 0; y < img.getHeight(); y ++){
             for (int x = 0; x < img.getWidth(); x ++){
-                scaledX = (int)(x*scaleWidth);
-                scaledY = (int)(y*scaleHeight);
+                // to actually get the corresponding cell indices in the smaller grid, multiply by the scale ratios
+                // e.g.: for the above example: (0, 1) --> (0*2/3, 1*2/3) = (0, 0). That's why all the a's are in the top-left corner of the 2x2
+                newX = (int)(x*scaleWidthRatio);
+                newY = (int)(y*scaleHeightRatio);
                 
-                if (xPrev != scaledX || yPrev != scaledY){
-                    currentCell /= occurrence;
-                    scaledImg[yPrev][xPrev] = currentCell;
-                    currentCell = 0;
+                // since multiple cells in the bigger grid could correspond to the same cell in the smaller one 
+                // (e.g., 'a' corresponds to 4 in the example up top), only store the information collected thus far for a smaller cell
+                // when switching smaller cells (e.g., going from a: (0, 1) --> (0, 0) to c: (0, 2) --> (0, 1)
+                if (oldX != newX || oldY != newY){
+                    scaledImgBMPCount[oldY][oldX] += occurrence;
+                    scaledImgBMPBlacks[oldY][oldX] += blacks;
+                    blacks = 0;
                     occurrence = 0;
-                    xPrev = scaledX;
-                    yPrev = scaledY;
+                    oldX = newX;
+                    oldY = newY;
                 }
                 occurrence ++;
-                if (img.getRGB(x, y) == Color.BLACK.getRGB())
-                    currentCell ++;
+                if (img.getRGB(x, y) == Color.BLACK.getRGB()) {
+                    blacks ++;
+                }
             }
         }
-        currentCell /= occurrence;
-        scaledImg[scaledY][scaledX] = currentCell;
+        scaledImgBMPCount[oldY][oldX] += occurrence;
+        scaledImgBMPBlacks[oldY][oldX] += blacks;
         
-        return scaledImg;
+        for (int y = 0; y < newHeight; y ++) {
+            for (int x = 0; x < newWidth; x ++) {
+                scaledImgBMP[y][x] = (double) scaledImgBMPBlacks[y][x] / scaledImgBMPCount[y][x];
+            }
+        }
+        
+        return scaledImgBMP;
     }
 }

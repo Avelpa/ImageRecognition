@@ -15,9 +15,10 @@ public class Bounds {
     
     private static int left, right, bottom, top;
     
-    
     /**
-     * sets the bound values for a symbol in an image
+     * Finds the smallest possible bounding rectangle for the non-white pixels in an image
+     * If the entire image is white, then right < left and top < bottom, which is an invalid combination
+     *  - this is caught in cropImage
      * @param canvas the entire image
      */
     private static void setBounds(BufferedImage canvas){
@@ -43,13 +44,15 @@ public class Bounds {
         }
     }
     
+    /*
+      Return the image cropped to the smallest bounding rectangle enclosing all non-white pixels
+      If the image is purely white, return null
+    */
     public static BufferedImage cropImage(BufferedImage img){
-        setBounds(img);
+        Bounds.setBounds(img);
+        if (left > right || bottom < top) {
+            return null;
+        }
         return img.getSubimage(left, top, right-left+1, bottom-top+1);
-    }
-    
-    @Override
-    public String toString(){
-        return "left: " + left +  " right: " + right + " top: " + top + " bottom: " + bottom;
     }
 }

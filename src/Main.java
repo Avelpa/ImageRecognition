@@ -20,13 +20,18 @@ public class Main {
     public static void main(String[] args)
     {
         NumberReader reader = new NumberReader("images/math/");
-        reader.init();
-        
+//        
         BufferedImage testImg = FileManager.loadImage("images/tests/test.png");
         testImg = Bounds.cropImage(testImg);
+        if (testImg == null) {
+            System.err.println("Error: Image must contain at least one non-white pixel");
+            return;
+        }
         Symbol[] symbols = reader.getSymbols(testImg);
         
         doMath(symbols, reader);
+        
+        
         
 //        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_BGR);
 //        int[] data = new int[10000];
