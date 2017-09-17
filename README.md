@@ -2,7 +2,7 @@
 
 ## Quick Overview
 - Made ‘from scratch’ (i.e., no image recognition libraries)
-- Recognizes symbols in PNG images
+- Recognizes symbols in PNG images drawn in MS Paint
 - Learns new/incorrectly guessed symbols
 - Evaluates hand-drawn math expressions
 
