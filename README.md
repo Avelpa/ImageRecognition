@@ -1,5 +1,11 @@
 # ImageRecognition
 
+## Quick Overview
+- Made ‘from scratch’ (i.e., no image recognition libraries)
+- Recognizes symbols in PNG images
+- Learns new/incorrectly guessed symbols
+- Evaluates hand-drawn math expressions
+
 This was an attempt at making an image-recognition machine from scratch. No real machine learning/vision algorithms were used.
 
 When an image is input, it is first cropped/split into sub-images each containing one symbol.
