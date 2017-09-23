@@ -1,5 +1,17 @@
 # ImageRecognition
 
+
+[Math demo](https://www.youtube.com/watch?v=LlDKhQt91so&feature=youtu.be)
+- I draw a mathematical expression
+- The program evaluates it and asks me if it was correct
+- I confirm that it was
+- Just in case it was a false positive (i.e., 3 + 3 is interpreted as 5 + 1 and the answer is still correct), I teach the program which symbols represented what
+
+[Learning demo](https://www.youtube.com/watch?v=4BHi9PyTVbA&feature=youtu.be)
+- I draw some number 8's, then perform a 'batch learn' operation
+- The 8's are extracted from the big PNG and cropped
+- They are added to the 8's 'knowledge base'
+
 ## Quick Overview
 - Made ‘from scratch’ (i.e., no image recognition libraries)
 - Recognizes symbols in PNG images drawn in MS Paint
